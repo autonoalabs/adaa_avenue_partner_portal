@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Adaa Boutique - Inventory & OMS</title>
+  <title>Adaa Avenue - Inventory & OMS</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -13,77 +13,95 @@
 <body class="bg-slate-100 text-slate-900 font-sans min-h-screen">
 
   <script>
-    // =========================================================================
-    // CONFIGURATION: Paste your Web App URL here
-    // =========================================================================
+    // CONFIGURATION
     const API_URL = "https://script.google.com/macros/s/AKfycbyPdi0V0tY8ofiEC8Y_0uk_wjNu2xhIPBiwGZ3LlkclnEJtvWddv6eF9bafEZZdzTpn/exec";
   </script>
 
   <!-- Navigation Bar -->
   <header class="bg-[#1B365D] text-white shadow-md sticky top-0 z-40">
-    <div class="max-w-6xl mx-auto px-4 py-3 flex justify-between items-center">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
       <div class="flex items-center space-x-3">
         <i class="fa-solid fa-store text-xl text-amber-300"></i>
         <div>
-          <h1 class="text-lg font-bold tracking-wide">ADAA BOUTIQUE</h1>
-          <p class="text-[11px] text-slate-300">Live Inventory & Partner Portal</p>
+          <h1 class="text-lg font-bold tracking-wide">ADAA AVENUE</h1>
+          <p class="text-[11px] text-slate-300">Live Inventory, Ledgers & Accounts</p>
         </div>
       </div>
       <button onclick="loadAllData()" class="bg-indigo-900 hover:bg-indigo-800 text-xs px-3 py-2 rounded-lg font-medium shadow flex items-center gap-1.5">
-        <i class="fa-solid fa-arrows-rotate"></i> <span>Sync</span>
+        <i class="fa-solid fa-arrows-rotate"></i> <span>Sync All</span>
       </button>
     </div>
   </header>
 
-  <!-- Sub Header Tabs -->
-  <nav class="bg-white border-b border-slate-200 sticky top-[57px] z-30">
-    <div class="max-w-6xl mx-auto px-4 flex space-x-6 text-sm">
+  <!-- Navigation Tabs -->
+  <nav class="bg-white border-b border-slate-200 sticky top-[57px] z-30 overflow-x-auto">
+    <div class="max-w-7xl mx-auto px-4 flex space-x-6 text-sm min-w-max">
       <button onclick="switchTab('inventory')" id="tab-inventory" class="tab-btn active py-3">Catalog & Stock</button>
       <button onclick="switchTab('resellers')" id="tab-resellers" class="tab-btn py-3 text-slate-500">Reseller Ledger</button>
+      <button onclick="switchTab('purchasers')" id="tab-purchasers" class="tab-btn py-3 text-slate-500">Purchaser Ledger</button>
+      <button onclick="switchTab('accounts')" id="tab-accounts" class="tab-btn py-3 text-slate-500">Account Summary</button>
       <button onclick="switchTab('actions')" id="tab-actions" class="tab-btn py-3 text-slate-500">Log Entry</button>
     </div>
   </nav>
 
-  <main class="max-w-6xl mx-auto p-4 sm:p-6">
+  <main class="max-w-7xl mx-auto p-4 sm:p-6">
 
     <!-- ============================================================= -->
     <!-- TAB 1: PRODUCT CATALOG & LIVE INVENTORY                       -->
     <!-- ============================================================= -->
     <section id="view-inventory">
-      <!-- Search & Filters -->
-      <div class="grid grid-cols-1 sm:grid-cols-12 gap-3 mb-6">
-        <div class="sm:col-span-8 relative">
-          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
-          <input type="text" id="searchInput" onkeyup="filterItems()" placeholder="Search by SKU, fabric, design number, color..." 
-                 class="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-300 rounded-lg text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#1B365D]">
+      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 space-y-3">
+        <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
+          <div class="sm:col-span-8 relative">
+            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
+            <input type="text" id="searchInput" onkeyup="filterItems()" placeholder="Search by SKU, fabric, design number, color..." 
+                   class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#1B365D]">
+          </div>
+          <div class="sm:col-span-4">
+            <select id="statusFilter" onchange="filterItems()" class="w-full py-2.5 px-3 bg-slate-50 border border-slate-300 rounded-lg text-sm shadow-sm">
+              <option value="ALL">All Stock Statuses</option>
+              <option value="In Stock">In Stock Only</option>
+              <option value="Low Stock">Low Stock (≤ 3)</option>
+              <option value="Out of Stock">Out of Stock</option>
+            </select>
+          </div>
         </div>
-        <div class="sm:col-span-4">
-          <select id="statusFilter" onchange="filterItems()" class="w-full py-2.5 px-3 bg-white border border-slate-300 rounded-lg text-sm shadow-sm">
-            <option value="ALL">All Stock Statuses</option>
-            <option value="In Stock">In Stock Only</option>
-            <option value="Low Stock">Low Stock (≤ 3)</option>
-            <option value="Out of Stock">Out of Stock</option>
-          </select>
+
+        <!-- Date Range Filter Bar -->
+        <div class="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-100 text-xs">
+          <span class="font-bold text-slate-600 flex items-center gap-1.5">
+            <i class="fa-regular fa-calendar text-[#1B365D]"></i> Date Filter:
+          </span>
+          <div class="flex items-center gap-2">
+            <label class="text-slate-500">From</label>
+            <input type="date" id="dateFrom" onchange="filterItems()" class="p-1.5 border border-slate-300 rounded-md text-xs bg-slate-50">
+          </div>
+          <div class="flex items-center gap-2">
+            <label class="text-slate-500">To</label>
+            <input type="date" id="dateTo" onchange="filterItems()" class="p-1.5 border border-slate-300 rounded-md text-xs bg-slate-50">
+          </div>
+          <button onclick="clearDateFilter()" class="text-indigo-600 hover:text-indigo-800 font-semibold ml-auto">
+            Clear Dates
+          </button>
         </div>
       </div>
 
-      <!-- Loading State -->
       <div id="catalogLoading" class="text-center py-12">
         <i class="fa-solid fa-spinner fa-spin text-3xl text-indigo-900"></i>
         <p class="text-sm text-slate-500 mt-2">Loading live stock data...</p>
       </div>
 
-      <!-- Inventory Grid -->
       <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 hidden"></div>
     </section>
 
     <!-- ============================================================= -->
-    <!-- TAB 2: RESELLER LEDGER & CREDIT BALANCES                      -->
+    <!-- TAB 2: RESELLER LEDGER (SUMMARY + DETAILED BATCHES)           -->
     <!-- ============================================================= -->
-    <section id="view-resellers" class="hidden">
+    <section id="view-resellers" class="hidden space-y-6">
+      <!-- Balance Statements -->
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="p-4 bg-slate-50 border-b border-slate-200">
-          <h2 class="font-bold text-slate-800 text-sm">Reseller Consignment & Balance Statements</h2>
+          <h2 class="font-bold text-slate-800 text-sm">Reseller Balances & Outstandings</h2>
         </div>
         <div class="overflow-x-auto">
           <table class="w-full text-left text-sm">
@@ -105,40 +123,130 @@
           </table>
         </div>
       </div>
+
+      <!-- Detailed Bill-wise Consignments -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="p-4 bg-slate-50 border-b border-slate-200">
+          <h2 class="font-bold text-slate-800 text-sm">Detailed Bill-Wise Consignment Records</h2>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-100 text-slate-700 text-xs uppercase font-semibold">
+              <tr>
+                <th class="p-3">Issue ID</th>
+                <th class="p-3">Date</th>
+                <th class="p-3">Reseller</th>
+                <th class="p-3">SKU</th>
+                <th class="p-3 text-center">Issued</th>
+                <th class="p-3 text-right">Base Rate</th>
+                <th class="p-3 text-right">Total Bill</th>
+                <th class="p-3 text-center">Sold</th>
+                <th class="p-3 text-center">Returned</th>
+                <th class="p-3 text-center">Held Pcs</th>
+                <th class="p-3 text-center">Batch Status</th>
+              </tr>
+            </thead>
+            <tbody id="detailedConsignmentTableBody" class="divide-y divide-slate-200 text-xs text-slate-700">
+              <tr><td colspan="11" class="text-center p-6 text-slate-400">Loading batch details...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </section>
 
     <!-- ============================================================= -->
-    <!-- TAB 3: LOG SALE / CONSIGNMENT / RETURN                         -->
+    <!-- TAB 3: PURCHASER LEDGER                                       -->
+    <!-- ============================================================= -->
+    <section id="view-purchasers" class="hidden">
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="p-4 bg-slate-50 border-b border-slate-200">
+          <h2 class="font-bold text-slate-800 text-sm">Wholesaler Inward Purchase Ledger</h2>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-100 text-slate-700 text-xs uppercase font-semibold">
+              <tr>
+                <th class="p-3">Lot / Bill</th>
+                <th class="p-3">Date</th>
+                <th class="p-3">Trip ID</th>
+                <th class="p-3">Wholesaler</th>
+                <th class="p-3">Market</th>
+                <th class="p-3">Tax</th>
+                <th class="p-3 text-center">Bought</th>
+                <th class="p-3 text-right">Bill Amt</th>
+                <th class="p-3 text-right">Tax (5%)</th>
+                <th class="p-3 text-right">Trip Expense</th>
+                <th class="p-3 text-right">Total Landed</th>
+                <th class="p-3 text-center">Returned</th>
+                <th class="p-3 text-center">Retained</th>
+                <th class="p-3 text-center">Status</th>
+              </tr>
+            </thead>
+            <tbody id="purchaserTableBody" class="divide-y divide-slate-200 text-xs text-slate-700">
+              <tr><td colspan="14" class="text-center p-6 text-slate-400">Loading purchaser ledger...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================= -->
+    <!-- TAB 4: ACCOUNT SUMMARY (TRIP RECOVERY & P&L)                   -->
+    <!-- ============================================================= -->
+    <section id="view-accounts" class="hidden">
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+        <div class="p-4 bg-slate-50 border-b border-slate-200">
+          <h2 class="font-bold text-slate-800 text-sm">Trip-Wise P&L & Capital Recovery Status</h2>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-left text-sm">
+            <thead class="bg-slate-100 text-slate-700 text-xs uppercase font-semibold">
+              <tr>
+                <th class="p-3">Trip ID</th>
+                <th class="p-3">Date</th>
+                <th class="p-3">Market</th>
+                <th class="p-3 text-right">Purchases</th>
+                <th class="p-3 text-right">Expenses</th>
+                <th class="p-3 text-right">Total Investment</th>
+                <th class="p-3 text-center">Bought</th>
+                <th class="p-3 text-center">Sold</th>
+                <th class="p-3 text-center">Sold %</th>
+                <th class="p-3 text-right">Sales Revenue</th>
+                <th class="p-3 text-right">Gross Profit</th>
+                <th class="p-3 text-center">Trip Recovery Status</th>
+              </tr>
+            </thead>
+            <tbody id="accountTableBody" class="divide-y divide-slate-200 text-xs text-slate-700">
+              <tr><td colspan="12" class="text-center p-6 text-slate-400">Loading account summary...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================= -->
+    <!-- TAB 5: LOG ENTRY                                              -->
     <!-- ============================================================= -->
     <section id="view-actions" class="hidden">
-      <div class="max-w-2xl mx-auto bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-        <div class="flex gap-2 mb-6 border-b border-slate-200 pb-3">
-          <button type="button" onclick="setActionForm('sale')" id="btn-form-sale" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-[#1B365D] text-white">Record Sale</button>
-          <button type="button" onclick="setActionForm('consignment')" id="btn-form-consignment" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700">Issue Consignment</button>
-          <button type="button" onclick="setActionForm('return')" id="btn-form-return" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700">Record Return</button>
+      <div class="max-w-3xl mx-auto bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+        
+        <div class="flex flex-wrap gap-2 mb-6 border-b border-slate-200 pb-3">
+          <button type="button" onclick="setActionForm('product')" id="btn-form-product" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-[#1B365D] text-white">🏷️ + New Product</button>
+          <button type="button" onclick="setActionForm('newtrip')" id="btn-form-newtrip" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700">🗺️ + New Trip</button>
+          <button type="button" onclick="setActionForm('subexpense')" id="btn-form-subexpense" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700">🧾 + Trip Sub-Expense</button>
+          <button type="button" onclick="setActionForm('purchase')" id="btn-form-purchase" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700">📦 + Purchase Bill</button>
+          <button type="button" onclick="setActionForm('sale')" id="btn-form-sale" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700">💰 Record Sale</button>
+          <button type="button" onclick="setActionForm('consignment')" id="btn-form-consignment" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700">🤝 Issue Consignment</button>
+          <button type="button" onclick="setActionForm('return')" id="btn-form-return" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700">🔄 Record Return</button>
         </div>
 
         <form id="actionForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
-          <input type="hidden" id="formActionType" value="recordSale">
-
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Product SKU *</label>
-              <input type="text" id="inpSku" required placeholder="e.g. DRS-GEO-101-BLU-FS" class="w-full p-2.5 border rounded-lg text-sm">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Quantity *</label>
-              <input type="number" id="inpQty" min="1" required value="1" class="w-full p-2.5 border rounded-lg text-sm">
-            </div>
-          </div>
-
-          <div id="dynamicFields">
-            <!-- Dynamically populated for Sale / Consignment / Return -->
-          </div>
+          <input type="hidden" id="formActionType" value="addProduct">
+          <div id="dynamicFields" class="space-y-4"></div>
 
           <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Notes / Remarks</label>
-            <input type="text" id="inpNotes" placeholder="Optional reference or contact" class="w-full p-2.5 border rounded-lg text-sm">
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Remarks / Reference</label>
+            <input type="text" id="inpNotes" placeholder="Optional notes" class="w-full p-2.5 border rounded-lg text-sm">
           </div>
 
           <button type="submit" id="btnSubmitForm" class="w-full bg-[#1B365D] hover:bg-[#12243e] text-white font-bold py-3 rounded-lg text-sm shadow">
@@ -151,14 +259,16 @@
 
   </main>
 
-  <!-- Core Dashboard JavaScript -->
   <script>
     let inventoryData = [];
     let resellerData = [];
+    let detailedConsignments = [];
+    let purchaserData = [];
+    let accountData = [];
+    let tripList = [];
 
-    // Switch between the three top tabs
     function switchTab(tabId) {
-      ['inventory', 'resellers', 'actions'].forEach(t => {
+      ['inventory', 'resellers', 'purchasers', 'accounts', 'actions'].forEach(t => {
         document.getElementById(`view-${t}`).classList.add('hidden');
         document.getElementById(`tab-${t}`).classList.remove('active');
         document.getElementById(`tab-${t}`).classList.add('text-slate-500');
@@ -168,34 +278,32 @@
       document.getElementById(`tab-${tabId}`).classList.remove('text-slate-500');
     }
 
-    // Fetch data from Apps Script
     async function loadAllData() {
       document.getElementById("catalogLoading").classList.remove("hidden");
       document.getElementById("productGrid").classList.add("hidden");
 
       try {
-        // Fetch inventory
-        const resInv = await fetch(`${API_URL}?action=getInventory`);
-        const jsonInv = await resInv.json();
-        if (jsonInv.status === "success") {
-          inventoryData = jsonInv.data;
-          renderCatalog(inventoryData);
-        }
+        const [resInv, resLedg, resDetail, resPurch, resAcct, resTrips] = await Promise.all([
+          fetch(`${API_URL}?action=getInventory`).then(r => r.json()),
+          fetch(`${API_URL}?action=getResellerLedger`).then(r => r.json()),
+          fetch(`${API_URL}?action=getDetailedResellerLedger`).then(r => r.json()),
+          fetch(`${API_URL}?action=getPurchaserLedger`).then(r => r.json()),
+          fetch(`${API_URL}?action=getAccountSummary`).then(r => r.json()),
+          fetch(`${API_URL}?action=getExpenseTrips`).then(r => r.json())
+        ]);
 
-        // Fetch reseller ledger
-        const resLedg = await fetch(`${API_URL}?action=getResellerLedger`);
-        const jsonLedg = await resLedg.json();
-        if (jsonLedg.status === "success") {
-          resellerData = jsonLedg.data;
-          renderResellers(resellerData);
-        }
+        if (resInv.status === "success") { inventoryData = resInv.data; renderCatalog(inventoryData); }
+        if (resLedg.status === "success") { resellerData = resLedg.data; renderResellers(resellerData); }
+        if (resDetail.status === "success") { detailedConsignments = resDetail.data; renderDetailedConsignments(detailedConsignments); }
+        if (resPurch.status === "success") { purchaserData = resPurch.data; renderPurchasers(purchaserData); }
+        if (resAcct.status === "success") { accountData = resAcct.data; renderAccounts(accountData); }
+        if (resTrips.status === "success") { tripList = resTrips.data; }
       } catch (err) {
         document.getElementById("catalogLoading").innerHTML = 
-          `<p class="text-red-500 text-sm font-semibold">Could not reach the database. Check that API_URL is correct and set to "Anyone".</p>`;
+          `<p class="text-red-500 text-sm font-semibold">Could not load database. Check network or deployment.</p>`;
       }
     }
 
-    // Render Product Cards
     function renderCatalog(items) {
       const grid = document.getElementById("productGrid");
       grid.innerHTML = "";
@@ -203,7 +311,7 @@
       grid.classList.remove("hidden");
 
       if (!items || items.length === 0) {
-        grid.innerHTML = `<p class="col-span-full text-center text-slate-400 py-8">No products found in the catalog.</p>`;
+        grid.innerHTML = `<p class="col-span-full text-center text-slate-400 py-8">No products found matching criteria.</p>`;
         return;
       }
 
@@ -211,31 +319,56 @@
         const badgeColor = p.status === "In Stock" ? "bg-emerald-100 text-emerald-800" :
                            p.status === "Low Stock" ? "bg-amber-100 text-amber-800" : "bg-rose-100 text-rose-800";
 
+        let resellerBreakdownHtml = "";
+        if (p.resellerHoldings && p.resellerHoldings.length > 0) {
+          resellerBreakdownHtml = p.resellerHoldings.map(r => 
+            `<span class="bg-indigo-50 text-indigo-900 px-1.5 py-0.5 rounded text-[10px] font-medium border border-indigo-100">${r.name}: ${r.qty} pcs</span>`
+          ).join(" ");
+        }
+
         grid.innerHTML += `
-          <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col justify-between">
-            <div class="h-44 bg-slate-100 flex items-center justify-center overflow-hidden border-b border-slate-100">
+          <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col justify-between hover:shadow-md transition">
+            <div class="h-44 bg-slate-100 flex items-center justify-center overflow-hidden border-b border-slate-100 relative">
               ${p.imageUrl && p.imageUrl.startsWith("http") 
                 ? `<img src="${p.imageUrl}" alt="${p.name}" class="h-full w-full object-cover">` 
                 : `<i class="fa-solid fa-shirt text-slate-300 text-4xl"></i>`}
+              <span class="absolute top-2 right-2 text-[10px] font-bold px-2 py-0.5 rounded shadow-sm ${badgeColor}">${p.status}</span>
             </div>
-            <div class="p-4 flex-grow flex flex-col justify-between">
+
+            <div class="p-4 flex-grow flex flex-col justify-between space-y-3">
               <div>
                 <div class="flex justify-between items-start gap-1 mb-1">
                   <span class="text-xs font-mono font-bold text-[#1B365D] bg-indigo-50 px-2 py-0.5 rounded">${p.sku}</span>
-                  <span class="text-[10px] font-bold px-2 py-0.5 rounded ${badgeColor}">${p.status}</span>
+                  <span class="text-[11px] font-semibold text-slate-400">${p.dateAdded || ''}</span>
                 </div>
                 <h3 class="font-bold text-slate-800 text-sm mt-1 leading-snug">${p.name}</h3>
-                <p class="text-xs text-slate-500 mt-0.5">${p.fabric} • ${p.color} • ${p.size}</p>
+                <p class="text-xs text-slate-500 mt-0.5">${p.fabric} • ${p.color} • ${p.size} • <span class="text-indigo-700 font-medium">${p.expenseId}</span></p>
               </div>
 
-              <div class="mt-4 pt-3 border-t border-slate-100 flex justify-between items-end">
+              <!-- Stock Breakdown Box -->
+              <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200 space-y-1.5">
+                <div class="flex justify-between items-center text-xs">
+                  <span class="font-bold text-slate-700">📦 Total Available:</span>
+                  <span class="font-extrabold ${p.totalActiveInventory > 0 ? 'text-[#1B365D]' : 'text-rose-600'}">${p.totalActiveInventory} pcs</span>
+                </div>
+                <div class="flex flex-wrap gap-1 text-[11px] text-slate-600">
+                  <span class="bg-slate-200/80 px-1.5 py-0.5 rounded text-[10px] font-medium">Godown: ${p.godownStock} pcs</span>
+                  ${resellerBreakdownHtml}
+                </div>
+                <div class="flex justify-between items-center pt-1 border-t border-slate-200 text-[11px] text-emerald-700 font-semibold">
+                  <span>🔥 Total Sold:</span>
+                  <span>${p.totalSold} pcs</span>
+                </div>
+              </div>
+
+              <div class="pt-2 border-t border-slate-100 flex justify-between items-end">
                 <div>
-                  <span class="text-[11px] text-slate-400 block">Retail MRP</span>
+                  <span class="text-[10px] text-slate-400 block uppercase font-medium">Retail MRP</span>
                   <span class="text-base font-extrabold text-slate-900">₹${p.retailMrp}</span>
                 </div>
                 <div class="text-right">
-                  <span class="text-[11px] text-slate-400 block">Rack Stock</span>
-                  <span class="text-base font-bold ${p.liveRackStock > 0 ? 'text-[#1B365D]' : 'text-rose-600'}">${p.liveRackStock} pcs</span>
+                  <span class="text-[10px] text-slate-400 block uppercase font-medium">Floor Rate (${(p.resellerMargin*100).toFixed(0)}%)</span>
+                  <span class="text-xs font-bold text-indigo-700">₹${p.resellerFloorRate}</span>
                 </div>
               </div>
             </div>
@@ -244,24 +377,38 @@
       });
     }
 
-    // Filter Items by text or status
     function filterItems() {
       const q = document.getElementById("searchInput").value.toLowerCase();
       const status = document.getElementById("statusFilter").value;
+      const fromDate = document.getElementById("dateFrom").value;
+      const toDate = document.getElementById("dateTo").value;
 
       const filtered = inventoryData.filter(item => {
         const matchesQuery = item.sku.toLowerCase().includes(q) ||
                              item.name.toLowerCase().includes(q) ||
                              item.fabric.toLowerCase().includes(q) ||
                              item.color.toLowerCase().includes(q);
+
         const matchesStatus = (status === "ALL") || (item.status === status);
-        return matchesQuery && matchesStatus;
+
+        let matchesDate = true;
+        if (item.dateAdded) {
+          if (fromDate && item.dateAdded < fromDate) matchesDate = false;
+          if (toDate && item.dateAdded > toDate) matchesDate = false;
+        }
+
+        return matchesQuery && matchesStatus && matchesDate;
       });
 
       renderCatalog(filtered);
     }
 
-    // Render Reseller Ledger Table
+    function clearDateFilter() {
+      document.getElementById("dateFrom").value = "";
+      document.getElementById("dateTo").value = "";
+      filterItems();
+    }
+
     function renderResellers(resellers) {
       const tbody = document.getElementById("resellerTableBody");
       tbody.innerHTML = "";
@@ -287,20 +434,295 @@
       });
     }
 
-    // Set Form Fields for Action Type
+    function renderDetailedConsignments(records) {
+      const tbody = document.getElementById("detailedConsignmentTableBody");
+      tbody.innerHTML = "";
+      if (!records || records.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="11" class="text-center p-6 text-slate-400">No consignment records logged.</td></tr>`;
+        return;
+      }
+
+      records.forEach(c => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50">
+            <td class="p-3 font-mono font-bold text-slate-700">${c.issueId}</td>
+            <td class="p-3 text-slate-500">${c.date}</td>
+            <td class="p-3 font-semibold text-slate-800">${c.resellerName}</td>
+            <td class="p-3 font-mono text-indigo-900">${c.sku}</td>
+            <td class="p-3 text-center font-bold text-slate-700">${c.issuedQty}</td>
+            <td class="p-3 text-right">₹${c.baseRate}</td>
+            <td class="p-3 text-right font-medium">₹${c.totalBilling}</td>
+            <td class="p-3 text-center text-emerald-700 font-semibold">${c.soldQty}</td>
+            <td class="p-3 text-center text-rose-600 font-semibold">${c.returnedQty}</td>
+            <td class="p-3 text-center font-bold ${c.heldQty > 0 ? 'text-[#1B365D]' : 'text-slate-400'}">${c.heldQty}</td>
+            <td class="p-3 text-center"><span class="text-[10px] font-medium px-2 py-0.5 rounded ${c.status === 'Holding Stock' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'}">${c.status}</span></td>
+          </tr>
+        `;
+      });
+    }
+
+    function renderPurchasers(purchasers) {
+      const tbody = document.getElementById("purchaserTableBody");
+      tbody.innerHTML = "";
+      if (!purchasers || purchasers.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="14" class="text-center p-6 text-slate-400">No purchase records found.</td></tr>`;
+        return;
+      }
+
+      purchasers.forEach(p => {
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50">
+            <td class="p-3 font-mono font-bold text-slate-800">${p.lotNo}</td>
+            <td class="p-3 text-slate-500">${p.date}</td>
+            <td class="p-3 font-mono text-xs text-indigo-700">${p.expenseId}</td>
+            <td class="p-3 font-semibold text-slate-800">${p.supplierName}</td>
+            <td class="p-3 text-slate-500">${p.marketCity}</td>
+            <td class="p-3"><span class="px-1.5 py-0.5 rounded bg-slate-100 font-medium">${p.taxType}</span></td>
+            <td class="p-3 text-center font-bold text-slate-700">${p.totalPieces}</td>
+            <td class="p-3 text-right font-medium">₹${p.billAmount.toLocaleString()}</td>
+            <td class="p-3 text-right text-slate-500">₹${p.taxAmount.toLocaleString()}</td>
+            <td class="p-3 text-right text-indigo-800 font-medium">₹${p.allocatedExpense.toLocaleString()}</td>
+            <td class="p-3 text-right font-extrabold text-[#1B365D]">₹${p.landedCost.toLocaleString()}</td>
+            <td class="p-3 text-center text-rose-600 font-bold">${p.returnedToWholesaler}</td>
+            <td class="p-3 text-center font-bold text-emerald-700">${p.netRetained}</td>
+            <td class="p-3 text-center"><span class="text-[10px] px-2 py-0.5 rounded ${p.paymentStatus === 'Paid' ? 'bg-emerald-100 text-emerald-800 font-semibold' : 'bg-rose-100 text-rose-800'}">${p.paymentStatus}</span></td>
+          </tr>
+        `;
+      });
+    }
+
+    function renderAccounts(accounts) {
+      const tbody = document.getElementById("accountTableBody");
+      tbody.innerHTML = "";
+      if (!accounts || accounts.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="12" class="text-center p-6 text-slate-400">No account summary records.</td></tr>`;
+        return;
+      }
+
+      accounts.forEach(a => {
+        const isRecovered = a.recoveryStatus.includes("Capital Recovered");
+        tbody.innerHTML += `
+          <tr class="hover:bg-slate-50">
+            <td class="p-3 font-mono font-bold text-indigo-900">${a.tripId}</td>
+            <td class="p-3 text-slate-500">${a.date}</td>
+            <td class="p-3 font-semibold text-slate-800">${a.market}</td>
+            <td class="p-3 text-right">₹${a.purchasesValue.toLocaleString()}</td>
+            <td class="p-3 text-right">₹${a.tripExpenses.toLocaleString()}</td>
+            <td class="p-3 text-right font-bold text-[#1B365D]">₹${a.totalInvestment.toLocaleString()}</td>
+            <td class="p-3 text-center">${a.totalBought}</td>
+            <td class="p-3 text-center font-bold">${a.totalSold}</td>
+            <td class="p-3 text-center font-semibold text-indigo-700">${(a.soldPct * 100).toFixed(1)}%</td>
+            <td class="p-3 text-right font-extrabold text-emerald-700">₹${a.salesRevenue.toLocaleString()}</td>
+            <td class="p-3 text-right font-extrabold text-indigo-900">₹${a.grossProfit.toLocaleString()}</td>
+            <td class="p-3 text-center"><span class="text-[10px] font-bold px-2 py-1 rounded ${isRecovered ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${a.recoveryStatus}</span></td>
+          </tr>
+        `;
+      });
+    }
+
+    function getTripOptionsHtml() {
+      if (!tripList || tripList.length === 0) {
+        return `<option value="EXP-1">EXP-1 (Default Trip)</option>`;
+      }
+      return tripList.map(t => `<option value="${t.expenseId}">${t.expenseId} - ${t.tripName} (${t.date})</option>`).join('');
+    }
+
+    // Dynamic Form Switcher
     function setActionForm(type) {
       const container = document.getElementById("dynamicFields");
       const actionHidden = document.getElementById("formActionType");
       
-      ['sale', 'consignment', 'return'].forEach(btn => {
+      ['product', 'newtrip', 'subexpense', 'purchase', 'sale', 'consignment', 'return'].forEach(btn => {
         const b = document.getElementById(`btn-form-${btn}`);
-        b.className = "text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700";
+        if (b) b.className = "text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700";
       });
-      document.getElementById(`btn-form-${type}`).className = "text-xs font-bold px-3 py-1.5 rounded-lg bg-[#1B365D] text-white";
+      const currentBtn = document.getElementById(`btn-form-${type}`);
+      if (currentBtn) currentBtn.className = "text-xs font-bold px-3 py-1.5 rounded-lg bg-[#1B365D] text-white";
 
-      if (type === 'sale') {
+      if (type === 'product') {
+        actionHidden.value = "addProduct";
+        container.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Link to Wholesale Trip (Expense ID) *</label>
+              <select id="inpProdExpId" class="w-full p-2.5 border rounded-lg text-sm bg-indigo-50 font-medium">
+                ${getTripOptionsHtml()}
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Item Title / Description *</label>
+              <input type="text" id="inpProdName" required placeholder="e.g. Heavy Georgette Suit" class="w-full p-2.5 border rounded-lg text-sm">
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Fabric / Category *</label>
+              <input type="text" id="inpProdFabric" required placeholder="Georgette / Cotton" class="w-full p-2.5 border rounded-lg text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Design No</label>
+              <input type="text" id="inpProdDesign" placeholder="D-105" class="w-full p-2.5 border rounded-lg text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Colour</label>
+              <input type="text" id="inpProdColor" placeholder="Navy Blue" class="w-full p-2.5 border rounded-lg text-sm">
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-5 gap-3">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Size</label>
+              <input type="text" id="inpProdSize" value="Free Size" class="w-full p-2.5 border rounded-lg text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Wholesale Cost *</label>
+              <input type="number" id="inpProdCost" required placeholder="850" class="w-full p-2.5 border rounded-lg text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Retail Markup %</label>
+              <input type="number" id="inpProdRetailMargin" step="0.05" value="0.35" class="w-full p-2.5 border rounded-lg text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Reseller Margin % *</label>
+              <input type="number" id="inpProdResellerMargin" step="0.05" value="0.15" class="w-full p-2.5 border rounded-lg text-sm bg-indigo-50">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Qty *</label>
+              <input type="number" id="inpProdQty" required value="4" min="1" class="w-full p-2.5 border rounded-lg text-sm">
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Custom SKU (Leave blank to auto-create)</label>
+              <input type="text" id="inpProdSku" placeholder="Leave blank to auto-generate" class="w-full p-2.5 border rounded-lg text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Lot Ref / Bill No</label>
+              <input type="text" id="inpProdLot" placeholder="LOT-01" class="w-full p-2.5 border rounded-lg text-sm">
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Product Photo URL (Google Drive Link)</label>
+            <input type="url" id="inpProdImage" placeholder="https://drive.google.com/..." class="w-full p-2.5 border rounded-lg text-sm">
+          </div>
+        `;
+      } else if (type === 'newtrip') {
+        actionHidden.value = "createTrip";
+        container.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Expense ID *</label>
+              <input type="text" id="inpTripExpId" placeholder="e.g. EXP-3" required class="w-full p-2.5 border rounded-lg text-sm font-mono font-bold">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Trip Date *</label>
+              <input type="date" id="inpTripDate" required class="w-full p-2.5 border rounded-lg text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Trip / Market Name *</label>
+              <input type="text" id="inpTripName" placeholder="Surat Wholesale Oct Trip" required class="w-full p-2.5 border rounded-lg text-sm">
+            </div>
+          </div>
+        `;
+      } else if (type === 'subexpense') {
+        actionHidden.value = "addExpenseDetail";
+        container.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Parent Trip (Expense ID) *</label>
+              <select id="inpSubExpId" class="w-full p-2.5 border rounded-lg text-sm font-medium bg-indigo-50">
+                ${getTripOptionsHtml()}
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Sub-Category *</label>
+              <select id="inpSubCat" class="w-full p-2.5 border rounded-lg text-sm">
+                <option value="Transport / Tempo">Transport / Tempo Cartage</option>
+                <option value="Hotel / Stay">Hotel Stay</option>
+                <option value="Lunch / Food">Lunch / Meals</option>
+                <option value="Packaging Polybags">Packaging Polybags & Tags</option>
+                <option value="Travel Fares">Train / Auto / Bus Fares</option>
+                <option value="Other Misc">Other Miscellaneous</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Amount (₹) *</label>
+              <input type="number" id="inpSubAmount" required placeholder="2500" class="w-full p-2.5 border rounded-lg text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Payment Mode</label>
+              <select id="inpSubMode" class="w-full p-2.5 border rounded-lg text-sm">
+                <option value="Cash">Cash</option>
+                <option value="UPI">UPI / GPay</option>
+                <option value="Bank">Bank Transfer</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Item Description</label>
+            <input type="text" id="inpSubDesc" placeholder="e.g. Tempo cartage to shop" class="w-full p-2.5 border rounded-lg text-sm">
+          </div>
+        `;
+      } else if (type === 'purchase') {
+        actionHidden.value = "addPurchase";
+        container.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Link to Trip (Expense ID) *</label>
+              <select id="inpPurchExpId" class="w-full p-2.5 border rounded-lg text-sm font-medium bg-indigo-50">
+                ${getTripOptionsHtml()}
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Wholesaler / Supplier Name *</label>
+              <input type="text" id="inpPurchSupplier" required placeholder="e.g. Shree Textiles" class="w-full p-2.5 border rounded-lg text-sm">
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Bill Amount (₹) *</label>
+              <input type="number" id="inpPurchAmount" required placeholder="30500" class="w-full p-2.5 border rounded-lg text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Total Pieces *</label>
+              <input type="number" id="inpPurchPieces" required placeholder="60" class="w-full p-2.5 border rounded-lg text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Tax Type</label>
+              <select id="inpPurchTax" class="w-full p-2.5 border rounded-lg text-sm">
+                <option value="GST (5%)">GST (5%)</option>
+                <option value="Non-GST / Cash">Non-GST / Cash</option>
+              </select>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Bill / Lot Reference</label>
+              <input type="text" id="inpPurchLotNo" placeholder="LOT-03" class="w-full p-2.5 border rounded-lg text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Payment Status</label>
+              <select id="inpPurchStatus" class="w-full p-2.5 border rounded-lg text-sm">
+                <option value="Paid">Paid</option>
+                <option value="Pending">Pending</option>
+              </select>
+            </div>
+          </div>
+        `;
+      } else if (type === 'sale') {
         actionHidden.value = "recordSale";
         container.innerHTML = `
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Product SKU *</label>
+              <input type="text" id="inpSku" required placeholder="e.g. DRS-GEO-101-BLU-FS" class="w-full p-2.5 border rounded-lg text-sm font-mono">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Quantity Sold *</label>
+              <input type="number" id="inpQty" min="1" required value="1" oninput="calculateSaleTotals()" class="w-full p-2.5 border rounded-lg text-sm">
+            </div>
+          </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">Sales Channel</label>
@@ -310,25 +732,33 @@
               </select>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Customer / Reseller Name</label>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Customer / Reseller Name *</label>
               <input type="text" id="inpParty" placeholder="Name" required class="w-full p-2.5 border rounded-lg text-sm">
             </div>
           </div>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-3">
+          <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Tag MRP (₹)</label>
-              <input type="number" id="inpMrp" placeholder="1300" required class="w-full p-2.5 border rounded-lg text-sm">
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Tag MRP / Unit (₹) *</label>
+              <input type="number" id="inpMrp" placeholder="350" required oninput="calculateSaleTotals()" class="w-full p-2.5 border rounded-lg text-sm">
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Discount / pc (₹)</label>
-              <input type="number" id="inpDiscount" value="0" class="w-full p-2.5 border rounded-lg text-sm">
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Discount Type</label>
+              <select id="inpDiscountType" class="w-full p-2.5 border rounded-lg text-sm">
+                <option value="None">None</option>
+                <option value="Bundle Offer (e.g. 3 for 1000)">Bundle Offer</option>
+                <option value="Flat Discount">Flat Discount</option>
+              </select>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Actual Sold Rate (₹)</label>
-              <input type="number" id="inpActualRate" placeholder="1250" required class="w-full p-2.5 border rounded-lg text-sm">
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Total Discount (₹)</label>
+              <input type="number" id="inpDiscountAmount" value="0" oninput="calculateSaleTotals()" class="w-full p-2.5 border rounded-lg text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Net Payable (₹) *</label>
+              <input type="number" id="inpNetPayable" readonly required class="w-full p-2.5 border rounded-lg text-sm font-bold bg-slate-100 text-[#1B365D]">
             </div>
           </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">Payment Mode</label>
               <select id="inpPayMode" class="w-full p-2.5 border rounded-lg text-sm">
@@ -352,11 +782,21 @@
         container.innerHTML = `
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Reseller Name</label>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Product SKU *</label>
+              <input type="text" id="inpSku" required placeholder="e.g. DRS-GEO-101-BLU-FS" class="w-full p-2.5 border rounded-lg text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Quantity Issued *</label>
+              <input type="number" id="inpQty" min="1" required value="2" class="w-full p-2.5 border rounded-lg text-sm">
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Reseller Name *</label>
               <input type="text" id="inpParty" placeholder="e.g. Partner A" required class="w-full p-2.5 border rounded-lg text-sm">
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Reseller Base Rate / pc (₹)</label>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Reseller Base Rate / pc (₹) *</label>
               <input type="number" id="inpBaseRate" placeholder="e.g. 1150" required class="w-full p-2.5 border rounded-lg text-sm">
             </div>
           </div>
@@ -366,7 +806,17 @@
         container.innerHTML = `
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Return Direction</label>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Product SKU *</label>
+              <input type="text" id="inpSku" required placeholder="e.g. DRS-GEO-101-BLU-FS" class="w-full p-2.5 border rounded-lg text-sm">
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Return Quantity *</label>
+              <input type="number" id="inpQty" min="1" required value="1" class="w-full p-2.5 border rounded-lg text-sm">
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Return Direction *</label>
               <select id="inpDirection" class="w-full p-2.5 border rounded-lg text-sm">
                 <option value="Reseller Return to Shop">Reseller Return to Shop</option>
                 <option value="Customer Return to Shop">Customer Return to Shop</option>
@@ -374,19 +824,27 @@
               </select>
             </div>
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Party / Reseller Name</label>
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Party / Wholesaler Name *</label>
               <input type="text" id="inpParty" placeholder="Name" required class="w-full p-2.5 border rounded-lg text-sm">
             </div>
           </div>
-          <div class="mt-3">
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Reason for Return</label>
+          <div>
+            <label class="block text-xs font-semibold text-slate-600 mb-1">Reason for Return *</label>
             <input type="text" id="inpReason" placeholder="Defective stitching, color exchange, etc." required class="w-full p-2.5 border rounded-lg text-sm">
           </div>
         `;
       }
     }
 
-    // Handle Form Submission
+    function calculateSaleTotals() {
+      const qty = Number(document.getElementById("inpQty")?.value || 1);
+      const mrp = Number(document.getElementById("inpMrp")?.value || 0);
+      const discount = Number(document.getElementById("inpDiscountAmount")?.value || 0);
+      const net = Math.max(0, (qty * mrp) - discount);
+      const netField = document.getElementById("inpNetPayable");
+      if (netField) netField.value = net;
+    }
+
     async function handleFormSubmit(e) {
       e.preventDefault();
       const statusMsg = document.getElementById("formStatusMsg");
@@ -399,25 +857,59 @@
 
       let payload = {
         action: actionType,
-        sku: document.getElementById("inpSku").value,
-        qty: document.getElementById("inpQty").value,
-        notes: document.getElementById("inpNotes").value
+        notes: document.getElementById("inpNotes").value || ""
       };
 
-      if (actionType === "recordSale") {
+      if (actionType === "addProduct") {
+        payload.expenseId = document.getElementById("inpProdExpId").value;
+        payload.name = document.getElementById("inpProdName").value;
+        payload.fabric = document.getElementById("inpProdFabric").value;
+        payload.designNo = document.getElementById("inpProdDesign").value;
+        payload.color = document.getElementById("inpProdColor").value;
+        payload.size = document.getElementById("inpProdSize").value;
+        payload.wholesaleCost = document.getElementById("inpProdCost").value;
+        payload.retailMargin = document.getElementById("inpProdRetailMargin").value;
+        payload.resellerMargin = document.getElementById("inpProdResellerMargin").value;
+        payload.purchasedQty = document.getElementById("inpProdQty").value;
+        payload.sku = document.getElementById("inpProdSku").value;
+        payload.lotRef = document.getElementById("inpProdLot").value;
+        payload.imageUrl = document.getElementById("inpProdImage").value;
+      } else if (actionType === "createTrip") {
+        payload.expenseId = document.getElementById("inpTripExpId").value;
+        payload.date = document.getElementById("inpTripDate").value;
+        payload.tripName = document.getElementById("inpTripName").value;
+      } else if (actionType === "addExpenseDetail") {
+        payload.expenseId = document.getElementById("inpSubExpId").value;
+        payload.subCategory = document.getElementById("inpSubCat").value;
+        payload.amount = document.getElementById("inpSubAmount").value;
+        payload.paymentMode = document.getElementById("inpSubMode").value;
+        payload.description = document.getElementById("inpSubDesc").value;
+      } else if (actionType === "addPurchase") {
+        payload.expenseId = document.getElementById("inpPurchExpId").value;
+        payload.supplierName = document.getElementById("inpPurchSupplier").value;
+        payload.billAmount = document.getElementById("inpPurchAmount").value;
+        payload.totalPieces = document.getElementById("inpPurchPieces").value;
+        payload.taxType = document.getElementById("inpPurchTax").value;
+        payload.lotNo = document.getElementById("inpPurchLotNo").value;
+        payload.paymentStatus = document.getElementById("inpPurchStatus").value;
+      } else if (actionType === "recordSale") {
+        payload.sku = document.getElementById("inpSku").value;
         payload.channel = document.getElementById("inpChannel").value;
         payload.customerOrReseller = document.getElementById("inpParty").value;
         payload.qtySold = document.getElementById("inpQty").value;
         payload.tagMrp = document.getElementById("inpMrp").value;
-        payload.discountPerPc = document.getElementById("inpDiscount").value;
-        payload.actualRatePerPc = document.getElementById("inpActualRate").value;
+        payload.discountType = document.getElementById("inpDiscountType").value;
+        payload.discountAmount = document.getElementById("inpDiscountAmount").value;
+        payload.netPayable = document.getElementById("inpNetPayable").value;
         payload.paymentMode = document.getElementById("inpPayMode").value;
         payload.paymentStatus = document.getElementById("inpPayStatus").value;
       } else if (actionType === "issueConsignment") {
+        payload.sku = document.getElementById("inpSku").value;
         payload.resellerName = document.getElementById("inpParty").value;
         payload.qtyIssued = document.getElementById("inpQty").value;
         payload.resellerBaseRate = document.getElementById("inpBaseRate").value;
       } else if (actionType === "recordReturn") {
+        payload.sku = document.getElementById("inpSku").value;
         payload.returnDirection = document.getElementById("inpDirection").value;
         payload.partyName = document.getElementById("inpParty").value;
         payload.returnQty = document.getElementById("inpQty").value;
@@ -436,25 +928,22 @@
           statusMsg.className = "text-center text-xs mt-2 font-semibold text-emerald-600";
           statusMsg.innerText = "✓ " + result.message;
           document.getElementById("actionForm").reset();
-          setActionForm('sale');
-          loadAllData(); // Refresh stock immediately
+          loadAllData();
         } else {
           statusMsg.className = "text-center text-xs mt-2 font-semibold text-rose-600";
           statusMsg.innerText = "Error: " + result.message;
         }
       } catch (err) {
         statusMsg.className = "text-center text-xs mt-2 font-semibold text-rose-600";
-        statusMsg.innerText = "Connection failed. Please check network or script deployment.";
+        statusMsg.innerText = "Connection failed. Check network or deployment.";
       } finally {
         btn.disabled = false;
         btn.innerText = "Submit Record";
       }
     }
 
-    // Initialize Default View
     window.onload = () => {
-      setActionForm('sale');
-      loadAllData();
+      loadAllData().then(() => setActionForm('product'));
     };
   </script>
 </body>
