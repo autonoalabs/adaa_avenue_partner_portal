@@ -46,56 +46,64 @@
   <main class="max-w-7xl mx-auto p-4 sm:p-6">
 
     <!-- ========================================== -->
-    <!-- TAB 1: CATALOG & STOCK                     -->
+    <!-- TAB 1: CATALOG & STOCK (OPTIMIZED DRILLDOWN)-->
     <!-- ========================================== -->
-    <section id="view-inventory">
-      <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200 mb-6 space-y-3">
-        <div class="grid grid-cols-1 sm:grid-cols-12 gap-3">
-          <div class="sm:col-span-8 relative">
-            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-3.5 text-slate-400 text-sm"></i>
-            <input type="text" id="searchInput" onkeyup="filterItems()" placeholder="Search by SKU, fabric, design number, color..." 
-                   class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-[#1B365D]">
+    <section id="view-inventory" class="space-y-5">
+      <!-- Purchase Bills Selector -->
+      <div class="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-200 space-y-3">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 gap-2">
+          <div>
+            <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
+              <i class="fa-solid fa-receipt text-[#1B365D]"></i> Select Purchase Bill & Wholesaler
+            </h2>
+            <p class="text-xs text-slate-500">Pick a sourcing date and wholesaler to load its specific items</p>
           </div>
-          <div class="sm:col-span-4 flex gap-2">
-            <select id="statusFilter" onchange="filterItems()" class="w-full py-2.5 px-3 bg-slate-50 border border-slate-300 rounded-lg text-sm shadow-sm">
-              <option value="ALL">All Stock Statuses</option>
-              <option value="In Stock">In Stock Only</option>
-              <option value="Low Stock">Low Stock (≤ 3)</option>
-              <option value="Out of Stock">Out of Stock</option>
-            </select>
-            <button onclick="loadInventory(true)" title="Refresh Stock" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-lg text-slate-700">
-              <i class="fa-solid fa-arrows-rotate"></i>
-            </button>
-          </div>
+          <button onclick="loadBatches(true)" class="text-xs text-indigo-700 hover:text-indigo-900 font-semibold flex items-center gap-1 self-start sm:self-auto">
+            <i class="fa-solid fa-arrows-rotate"></i> Refresh Bills
+          </button>
         </div>
 
-        <!-- Date Range Filter -->
-        <div class="flex flex-wrap items-center gap-3 pt-2 border-t border-slate-100 text-xs">
-          <span class="font-bold text-slate-600 flex items-center gap-1.5">
-            <i class="fa-regular fa-calendar text-[#1B365D]"></i> Date Range (Wholesale Purchase Date):
-          </span>
-          <div class="flex items-center gap-2">
-            <label class="text-slate-500">From</label>
-            <input type="date" id="dateFrom" onchange="filterItems()" class="p-1.5 border border-slate-300 rounded-md text-xs bg-slate-50">
+        <div id="batchPillsLoading" class="py-4 text-center text-xs text-slate-500">
+          <i class="fa-solid fa-spinner fa-spin mr-1 text-[#1B365D]"></i> Loading purchase dates...
+        </div>
+
+        <div id="batchPillsContainer" class="flex flex-wrap gap-2.5 pt-1"></div>
+      </div>
+
+      <!-- Search & Status Filter Bar for Active Bill Items -->
+      <div id="batchItemsControls" class="hidden bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div>
+            <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-600 block">Active Bill Batch</span>
+            <h3 id="activeBatchTitle" class="text-sm font-extrabold text-slate-900">Wholesaler Name</h3>
           </div>
-          <div class="flex items-center gap-2">
-            <label class="text-slate-500">To</label>
-            <input type="date" id="dateTo" onchange="filterItems()" class="p-1.5 border border-slate-300 rounded-md text-xs bg-slate-50">
+          <div class="flex flex-wrap sm:flex-nowrap gap-2 w-full sm:w-auto">
+            <div class="relative flex-grow sm:w-64">
+              <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
+              <input type="text" id="searchInput" onkeyup="filterItems()" placeholder="Filter by SKU, fabric, color..." 
+                     class="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-[#1B365D]">
+            </div>
+            <select id="statusFilter" onchange="filterItems()" class="py-1.5 px-2 bg-slate-50 border border-slate-300 rounded-lg text-xs">
+              <option value="ALL">All Stock Statuses</option>
+              <option value="In Stock">In Stock Only</option>
+              <option value="Low Stock">Low Stock</option>
+              <option value="Out of Stock">Out of Stock</option>
+            </select>
           </div>
-          <button onclick="clearDateFilter()" class="text-indigo-600 hover:text-indigo-800 font-semibold ml-auto">Clear Dates</button>
         </div>
       </div>
 
-      <div id="catalogLoading" class="text-center py-12">
-        <i class="fa-solid fa-spinner fa-spin text-3xl text-indigo-900"></i>
-        <p class="text-sm text-slate-500 mt-2">Loading live stock data...</p>
+      <!-- Item Loader & Product Grid -->
+      <div id="catalogLoading" class="text-center py-10 hidden">
+        <i class="fa-solid fa-spinner fa-spin text-2xl text-indigo-900"></i>
+        <p class="text-xs text-slate-500 mt-2 font-medium">Fetching items for selected bill...</p>
       </div>
 
       <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 hidden"></div>
     </section>
 
     <!-- ========================================== -->
-    <!-- TAB 2: RESELLER LEDGERS                    -->
+    <!-- TAB 2: RESELLER LEDGERS (DRILL-DOWN)       -->
     <!-- ========================================== -->
     <section id="view-resellers" class="hidden space-y-6">
       <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
@@ -130,7 +138,7 @@
         </div>
       </div>
 
-      <!-- Detail Drawer for Reseller Batches -->
+      <!-- Reseller Detail Panel -->
       <div id="resellerDetailPanel" class="hidden bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
         <div class="p-4 bg-indigo-50/70 border-b border-indigo-100 flex justify-between items-center">
           <div>
@@ -289,10 +297,11 @@
 
   </main>
 
-  <!-- Application Logic with Explicit Error Handling -->
   <script>
     const store = {
       inventory: null,
+      batches: null,
+      batchCache: {},
       resellers: null,
       detailedConsignments: null,
       purchasers: null,
@@ -301,8 +310,9 @@
     };
 
     let selectedResellerName = null;
+    let activeSelectedLotNo = null;
 
-    // Convert Google Drive share links to embeddable CDN URLs
+    // Convert Google Drive view URLs to direct embeddable CDN links
     function formatDriveUrl(url) {
       if (!url || typeof url !== 'string') return '';
       const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
@@ -312,7 +322,7 @@
       return url;
     }
 
-    // Convert any date string safely to YYYY-MM-DD
+    // Convert any date format safely to YYYY-MM-DD
     function parseToStandardDate(dateStr) {
       if (!dateStr) return null;
       if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
@@ -321,7 +331,7 @@
       return parsed.toISOString().split("T")[0];
     }
 
-    // Reusable UI error banner component
+    // UI Error Component
     function renderErrorBox(title, details, retryFnName) {
       return `
         <div class="p-4 bg-rose-50 border border-rose-200 rounded-xl max-w-lg mx-auto text-center shadow-sm">
@@ -336,7 +346,7 @@
         </div>`;
     }
 
-    // Robust Network Fetcher with Timeout and Error Parsing
+    // Network Fetcher with Timeout
     async function safeFetch(url, timeoutMs = 25000) {
       const controller = new AbortController();
       const id = setTimeout(() => controller.abort(), timeoutMs);
@@ -378,124 +388,113 @@
       if (targetEl) targetEl.classList.remove('hidden');
       if (targetBtn) { targetBtn.classList.add('active'); targetBtn.classList.remove('text-slate-500'); }
 
-      if (tabId === 'inventory' && !store.inventory) loadInventory();
+      if (tabId === 'inventory' && !store.batches) loadBatches();
       if (tabId === 'resellers' && !store.resellers) loadResellers();
       if (tabId === 'purchasers' && !store.purchasers) loadPurchasers();
       if (tabId === 'accounts' && !store.accounts) loadAccounts();
-      if (tabId === 'actions' && !store.trips) loadTrips().then(() => setActionForm('product'));
+      if (tabId === 'actions') {
+        if (!store.trips) loadTrips();
+        setActionForm('product');
+      }
     }
 
-    // 1. Load Inventory
-    async function loadInventory(force = false) {
-      if (store.inventory && !force) {
-        renderCatalog(store.inventory);
+    // 1. Load Batches (Tier 1 Drilldown)
+    async function loadBatches(force = false) {
+      if (store.batches && !force) {
+        renderBatchPills(store.batches);
+        return;
+      }
+
+      const loader = document.getElementById("batchPillsLoading");
+      const container = document.getElementById("batchPillsContainer");
+      if (loader) loader.classList.remove("hidden");
+      if (container) container.innerHTML = "";
+
+      try {
+        const json = await safeFetch(`${API_URL}?action=getPurchaseBatches`);
+        store.batches = json.data || [];
+        if (loader) loader.classList.add("hidden");
+        renderBatchPills(store.batches);
+      } catch (err) {
+        if (loader) {
+          loader.innerHTML = `<span class="text-rose-600 text-xs font-semibold">Failed to load bills: ${err.message}</span> <button onclick="loadBatches(true)" class="underline ml-2 text-indigo-700 font-bold">Retry</button>`;
+        }
+      }
+    }
+
+    function renderBatchPills(batches) {
+      const container = document.getElementById("batchPillsContainer");
+      if (!container) return;
+      container.innerHTML = "";
+
+      if (!batches || batches.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400">No purchase bills found in 02_Purchases_Inward.</p>`;
+        return;
+      }
+
+      batches.forEach(b => {
+        const escapedSupplier = (b.supplierName || 'Unknown').replace(/'/g, "\\'");
+        container.innerHTML += `
+          <button onclick="selectBatch('${b.lotNo}', '${escapedSupplier}', '${b.date}')" 
+                  id="pill-batch-${b.lotNo}" 
+                  class="batch-pill text-left p-3 border border-slate-200 rounded-xl bg-slate-50 hover:bg-indigo-50 hover:border-indigo-400 transition flex flex-col justify-between shadow-sm">
+            <div class="flex items-center justify-between gap-2 mb-1">
+              <span class="text-xs font-extrabold text-slate-800">${b.supplierName}</span>
+              <span class="text-[10px] font-mono font-bold text-indigo-700 bg-white px-1.5 py-0.5 rounded border border-indigo-100">${b.lotNo}</span>
+            </div>
+            <div class="flex items-center justify-between text-[11px] text-slate-500 gap-3">
+              <span><i class="fa-regular fa-calendar mr-1"></i>${b.date || 'Undated'}</span>
+              <span class="font-semibold text-slate-700 bg-slate-200/60 px-1.5 py-0.2 rounded text-[10px]">${b.totalPieces} pcs</span>
+            </div>
+          </button>
+        `;
+      });
+
+      if (batches.length > 0 && !activeSelectedLotNo) {
+        selectBatch(batches[0].lotNo, batches[0].supplierName, batches[0].date);
+      }
+    }
+
+    async function selectBatch(lotNo, supplierName, dateStr) {
+      activeSelectedLotNo = lotNo;
+
+      document.querySelectorAll(".batch-pill").forEach(el => {
+        el.classList.remove("border-[#1B365D]", "bg-indigo-50/80", "ring-2", "ring-[#1B365D]");
+        el.classList.add("border-slate-200", "bg-slate-50");
+      });
+      const activeBtn = document.getElementById(`pill-batch-${lotNo}`);
+      if (activeBtn) {
+        activeBtn.classList.add("border-[#1B365D]", "bg-indigo-50/80", "ring-2", "ring-[#1B365D]");
+      }
+
+      const controls = document.getElementById("batchItemsControls");
+      const title = document.getElementById("activeBatchTitle");
+      if (controls) controls.classList.remove("hidden");
+      if (title) title.innerText = `${supplierName} (Lot: ${lotNo}) — Purchased on ${dateStr}`;
+
+      if (store.batchCache[lotNo]) {
+        renderCatalog(store.batchCache[lotNo]);
         return;
       }
 
       const loader = document.getElementById("catalogLoading");
       const grid = document.getElementById("productGrid");
-      if (loader) {
-        loader.innerHTML = `
-          <i class="fa-solid fa-spinner fa-spin text-3xl text-indigo-900"></i>
-          <p class="text-sm text-slate-500 mt-2">Loading live stock data...</p>
-        `;
-        loader.classList.remove("hidden");
-      }
+      if (loader) loader.classList.remove("hidden");
       if (grid) grid.classList.add("hidden");
 
       try {
-        const json = await safeFetch(`${API_URL}?action=getInventory`);
-        store.inventory = json.data || [];
-        renderCatalog(store.inventory);
+        const json = await safeFetch(`${API_URL}?action=getInventory&lotRef=${encodeURIComponent(lotNo)}`);
+        const items = (json.data || []).map(item => ({ ...item, dateAdded: dateStr }));
+        store.batchCache[lotNo] = items;
+        if (loader) loader.classList.add("hidden");
+        renderCatalog(items);
       } catch (err) {
         if (loader) {
-          loader.innerHTML = renderErrorBox("Failed to Load Inventory", err.message, "loadInventory(true)");
+          loader.innerHTML = renderErrorBox("Failed to Load Items for Bill", err.message, `selectBatch('${lotNo}', '${supplierName}', '${dateStr}')`);
         }
       }
     }
 
-    // 2. Load Resellers
-    async function loadResellers(force = false) {
-      if (store.resellers && !force) {
-        renderResellers(store.resellers);
-        return;
-      }
-
-      const tbody = document.getElementById("resellerTableBody");
-      if (tbody) {
-        tbody.innerHTML = `<tr><td colspan="9" class="text-center p-6 text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading balances...</td></tr>`;
-      }
-
-      try {
-        const json = await safeFetch(`${API_URL}?action=getResellerData`);
-        store.resellers = json.data.summary || [];
-        store.detailedConsignments = json.data.detailed || [];
-        renderResellers(store.resellers);
-      } catch (err) {
-        if (tbody) {
-          tbody.innerHTML = `<tr><td colspan="9" class="p-4">${renderErrorBox("Failed to Load Reseller Ledger", err.message, "loadResellers(true)")}</td></tr>`;
-        }
-      }
-    }
-
-    // 3. Load Purchasers
-    async function loadPurchasers(force = false) {
-      if (store.purchasers && !force) {
-        renderPurchasers(store.purchasers);
-        return;
-      }
-
-      const tbody = document.getElementById("purchaserTableBody");
-      if (tbody) {
-        tbody.innerHTML = `<tr><td colspan="14" class="text-center p-6 text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading purchases...</td></tr>`;
-      }
-
-      try {
-        const json = await safeFetch(`${API_URL}?action=getPurchasers`);
-        store.purchasers = json.data || [];
-        renderPurchasers(store.purchasers);
-      } catch (err) {
-        if (tbody) {
-          tbody.innerHTML = `<tr><td colspan="14" class="p-4">${renderErrorBox("Failed to Load Purchaser Ledger", err.message, "loadPurchasers(true)")}</td></tr>`;
-        }
-      }
-    }
-
-    // 4. Load Accounts
-    async function loadAccounts(force = false) {
-      if (store.accounts && !force) {
-        renderAccounts(store.accounts);
-        return;
-      }
-
-      const tbody = document.getElementById("accountTableBody");
-      if (tbody) {
-        tbody.innerHTML = `<tr><td colspan="12" class="text-center p-6 text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading account summary...</td></tr>`;
-      }
-
-      try {
-        const json = await safeFetch(`${API_URL}?action=getAccounts`);
-        store.accounts = json.data || [];
-        renderAccounts(store.accounts);
-      } catch (err) {
-        if (tbody) {
-          tbody.innerHTML = `<tr><td colspan="12" class="p-4">${renderErrorBox("Failed to Load Account Summary", err.message, "loadAccounts(true)")}</td></tr>`;
-        }
-      }
-    }
-
-    // 5. Load Trips
-    async function loadTrips() {
-      try {
-        const json = await safeFetch(`${API_URL}?action=getTrips`);
-        store.trips = json.data || [];
-      } catch (err) {
-        console.warn("Could not load trips, defaulting to EXP-1:", err.message);
-        store.trips = [{ expenseId: "EXP-1", tripName: "Default Trip" }];
-      }
-    }
-
-    // Rendering: Catalog & Stock
     function renderCatalog(items) {
       const grid = document.getElementById("productGrid");
       const loader = document.getElementById("catalogLoading");
@@ -572,46 +571,48 @@
       });
     }
 
-    // Filter Items
     function filterItems() {
+      if (!activeSelectedLotNo || !store.batchCache[activeSelectedLotNo]) return;
       const q = (document.getElementById("searchInput")?.value || "").toLowerCase();
       const status = document.getElementById("statusFilter")?.value || "ALL";
-      const fromDate = document.getElementById("dateFrom")?.value || "";
-      const toDate = document.getElementById("dateTo")?.value || "";
 
-      const filtered = (store.inventory || []).filter(item => {
+      const filtered = store.batchCache[activeSelectedLotNo].filter(item => {
         const matchesQuery = (item.sku || "").toLowerCase().includes(q) ||
                              (item.name || "").toLowerCase().includes(q) ||
                              (item.fabric || "").toLowerCase().includes(q) ||
                              (item.color || "").toLowerCase().includes(q);
 
         const matchesStatus = (status === "ALL") || (item.status === status);
-
-        let matchesDate = true;
-        const purchaseDate = parseToStandardDate(item.dateAdded);
-
-        if (fromDate || toDate) {
-          if (!purchaseDate) {
-            matchesDate = false;
-          } else {
-            if (fromDate && purchaseDate < fromDate) matchesDate = false;
-            if (toDate && purchaseDate > toDate) matchesDate = false;
-          }
-        }
-
-        return matchesQuery && matchesStatus && matchesDate;
+        return matchesQuery && matchesStatus;
       });
 
       renderCatalog(filtered);
     }
 
-    function clearDateFilter() {
-      if (document.getElementById("dateFrom")) document.getElementById("dateFrom").value = "";
-      if (document.getElementById("dateTo")) document.getElementById("dateTo").value = "";
-      filterItems();
+    // 2. Load Resellers
+    async function loadResellers(force = false) {
+      if (store.resellers && !force) {
+        renderResellers(store.resellers);
+        return;
+      }
+
+      const tbody = document.getElementById("resellerTableBody");
+      if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="9" class="text-center p-6 text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading balances...</td></tr>`;
+      }
+
+      try {
+        const json = await safeFetch(`${API_URL}?action=getResellerData`);
+        store.resellers = json.data.summary || [];
+        store.detailedConsignments = json.data.detailed || [];
+        renderResellers(store.resellers);
+      } catch (err) {
+        if (tbody) {
+          tbody.innerHTML = `<tr><td colspan="9" class="p-4">${renderErrorBox("Failed to Load Reseller Ledger", err.message, "loadResellers(true)")}</td></tr>`;
+        }
+      }
     }
 
-    // Rendering: Reseller Balances
     function renderResellers(resellers) {
       const tbody = document.getElementById("resellerTableBody");
       if (!tbody) return;
@@ -623,7 +624,7 @@
 
       resellers.forEach(r => {
         const isClear = r.accountHealth === "Clear Account";
-        const escapedName = r.resellerName.replace(/'/g, "\\'");
+        const escapedName = (r.resellerName || '').replace(/'/g, "\\'");
         tbody.innerHTML += `
           <tr class="hover:bg-slate-50">
             <td class="p-3 font-semibold text-slate-800">
@@ -664,7 +665,7 @@
       datePills.innerHTML = "";
 
       const resellerConsignments = (store.detailedConsignments || []).filter(
-        c => c.resellerName.trim().toLowerCase() === resellerName.trim().toLowerCase()
+        c => (c.resellerName || '').trim().toLowerCase() === resellerName.trim().toLowerCase()
       );
 
       if (resellerConsignments.length === 0) {
@@ -715,7 +716,7 @@
       itemsBody.innerHTML = "";
 
       const matchingItems = (store.detailedConsignments || []).filter(
-        c => c.resellerName.trim().toLowerCase() === selectedResellerName.trim().toLowerCase() && c.date === dateStr
+        c => (c.resellerName || '').trim().toLowerCase() === selectedResellerName.trim().toLowerCase() && c.date === dateStr
       );
 
       if (matchingItems.length === 0) {
@@ -750,7 +751,29 @@
       selectedResellerName = null;
     }
 
-    // Rendering: Purchaser Ledger
+    // 3. Load Purchasers
+    async function loadPurchasers(force = false) {
+      if (store.purchasers && !force) {
+        renderPurchasers(store.purchasers);
+        return;
+      }
+
+      const tbody = document.getElementById("purchaserTableBody");
+      if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="14" class="text-center p-6 text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading purchases...</td></tr>`;
+      }
+
+      try {
+        const json = await safeFetch(`${API_URL}?action=getPurchasers`);
+        store.purchasers = json.data || [];
+        renderPurchasers(store.purchasers);
+      } catch (err) {
+        if (tbody) {
+          tbody.innerHTML = `<tr><td colspan="14" class="p-4">${renderErrorBox("Failed to Load Purchaser Ledger", err.message, "loadPurchasers(true)")}</td></tr>`;
+        }
+      }
+    }
+
     function renderPurchasers(purchasers) {
       const tbody = document.getElementById("purchaserTableBody");
       if (!tbody) return;
@@ -782,7 +805,29 @@
       });
     }
 
-    // Rendering: Accounts
+    // 4. Load Accounts
+    async function loadAccounts(force = false) {
+      if (store.accounts && !force) {
+        renderAccounts(store.accounts);
+        return;
+      }
+
+      const tbody = document.getElementById("accountTableBody");
+      if (tbody) {
+        tbody.innerHTML = `<tr><td colspan="12" class="text-center p-6 text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading account summary...</td></tr>`;
+      }
+
+      try {
+        const json = await safeFetch(`${API_URL}?action=getAccounts`);
+        store.accounts = json.data || [];
+        renderAccounts(store.accounts);
+      } catch (err) {
+        if (tbody) {
+          tbody.innerHTML = `<tr><td colspan="12" class="p-4">${renderErrorBox("Failed to Load Account Summary", err.message, "loadAccounts(true)")}</td></tr>`;
+        }
+      }
+    }
+
     function renderAccounts(accounts) {
       const tbody = document.getElementById("accountTableBody");
       if (!tbody) return;
@@ -813,6 +858,17 @@
       });
     }
 
+    // 5. Load Trips
+    async function loadTrips() {
+      try {
+        const json = await safeFetch(`${API_URL}?action=getTrips`);
+        store.trips = json.data || [];
+      } catch (err) {
+        console.warn("Could not load trips, defaulting to EXP-1:", err.message);
+        store.trips = [{ expenseId: "EXP-1", tripName: "Default Trip" }];
+      }
+    }
+
     function getTripOptionsHtml() {
       if (!store.trips || store.trips.length === 0) {
         return `<option value="EXP-1">EXP-1 (Default Trip)</option>`;
@@ -820,7 +876,50 @@
       return store.trips.map(t => `<option value="${t.expenseId}">${t.expenseId} - ${t.tripName || 'Trip'} (${t.date || ''})</option>`).join('');
     }
 
-    // Forms Switcher
+    // 6. Log Entry Forms & Dynamic Auto-Populate Logic
+    function onSkuEntered() {
+      const skuInput = document.getElementById("inpSku");
+      const mrpInput = document.getElementById("inpMrp");
+      const hint = document.getElementById("skuHint");
+      if (!skuInput || !mrpInput) return;
+
+      const entered = skuInput.value.trim().toLowerCase();
+      if (!entered) {
+        if (hint) hint.innerText = "Type SKU to auto-populate MRP";
+        return;
+      }
+
+      let matched = null;
+
+      if (store.batchCache) {
+        for (const lot in store.batchCache) {
+          const found = store.batchCache[lot].find(p => (p.sku || "").toLowerCase() === entered);
+          if (found) { matched = found; break; }
+        }
+      }
+
+      if (!matched && store.inventory) {
+        matched = store.inventory.find(p => (p.sku || "").toLowerCase() === entered);
+      }
+
+      if (matched && matched.retailMrp) {
+        mrpInput.value = matched.retailMrp;
+        if (hint) hint.innerHTML = `<span class="text-emerald-600 font-semibold">✓ Found: ${matched.name} (MRP: ₹${matched.retailMrp})</span>`;
+        calculateSaleTotals();
+      } else {
+        if (hint) hint.innerHTML = `<span class="text-slate-400">SKU will be verified against Product Master on submit</span>`;
+      }
+    }
+
+    function calculateSaleTotals() {
+      const qty = Number(document.getElementById("inpQty")?.value || 1);
+      const mrp = Number(document.getElementById("inpMrp")?.value || 0);
+      const discount = Number(document.getElementById("inpDiscountAmount")?.value || 0);
+      const net = Math.max(0, (qty * mrp) - discount);
+      const netField = document.getElementById("inpNetPayable");
+      if (netField) netField.value = net;
+    }
+
     function setActionForm(type) {
       const container = document.getElementById("dynamicFields");
       const actionHidden = document.getElementById("formActionType");
@@ -958,7 +1057,7 @@
             <input type="text" id="inpSubDesc" placeholder="e.g. Tempo cartage to shop" class="w-full p-2.5 border rounded-lg text-sm">
           </div>
         `;
-    } else if (type === 'purchase') {
+      } else if (type === 'purchase') {
         actionHidden.value = "addPurchase";
         container.innerHTML = `
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -1014,7 +1113,9 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">Product SKU *</label>
-              <input type="text" id="inpSku" required placeholder="e.g. DRS-GEO-101-BLU-FS" class="w-full p-2.5 border rounded-lg text-sm font-mono">
+              <input type="text" id="inpSku" required oninput="onSkuEntered()" placeholder="e.g. A1, A2, DRS-..." 
+                     class="w-full p-2.5 border rounded-lg text-sm font-mono uppercase bg-indigo-50/50 focus:bg-white transition">
+              <span id="skuHint" class="text-[11px] text-slate-400 mt-1 block">Type SKU to auto-populate MRP</span>
             </div>
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">Quantity Sold *</label>
@@ -1025,31 +1126,31 @@
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">Sales Channel</label>
               <select id="inpChannel" class="w-full p-2.5 border rounded-lg text-sm">
-                <option value="Direct Retail Walk-in">Direct Retail Walk-in</option>
                 <option value="Reseller Sale">Reseller Sale</option>
+                <option value="Direct Retail Walk-in">Direct Retail Walk-in</option>
               </select>
             </div>
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">Customer / Reseller Name *</label>
-              <input type="text" id="inpParty" placeholder="Name" required class="w-full p-2.5 border rounded-lg text-sm">
+              <input type="text" id="inpParty" placeholder="e.g. Aqib, Tausif, Walk-in" required class="w-full p-2.5 border rounded-lg text-sm">
             </div>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
             <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Tag MRP / Unit *</label>
-              <input type="number" id="inpMrp" placeholder="350" required oninput="calculateSaleTotals()" class="w-full p-2.5 border rounded-lg text-sm">
+              <label class="block text-xs font-semibold text-slate-600 mb-1">Tag MRP / Unit (₹) *</label>
+              <input type="number" id="inpMrp" placeholder="Auto-fills from SKU" required oninput="calculateSaleTotals()" class="w-full p-2.5 border rounded-lg text-sm font-semibold text-slate-800">
             </div>
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">Discount Type</label>
               <select id="inpDiscountType" class="w-full p-2.5 border rounded-lg text-sm">
                 <option value="None">None</option>
-                <option value="Bundle Offer (e.g. 3 for 1000)">Bundle Offer</option>
+                <option value="Bundle Offer">Bundle Offer</option>
                 <option value="Flat Discount">Flat Discount</option>
               </select>
             </div>
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">Total Discount (₹)</label>
-              <input type="number" id="inpDiscountAmount" value="0" oninput="calculateSaleTotals()" class="w-full p-2.5 border rounded-lg text-sm">
+              <input type="number" id="inpDiscountAmount" value="0" min="0" oninput="calculateSaleTotals()" class="w-full p-2.5 border rounded-lg text-sm">
             </div>
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">Net Payable (₹) *</label>
@@ -1068,7 +1169,7 @@
             </div>
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">Payment Status</label>
-              <select id="inpPayStatus" class="w-full p-2.5 border rounded-lg text-sm">
+              <select id="inpPayStatus" class="w-full p-2.5 border rounded-lg text-sm font-semibold text-emerald-800 bg-emerald-50/50">
                 <option value="Received">Received</option>
                 <option value="Pending">Pending</option>
               </select>
@@ -1081,7 +1182,7 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">Product SKU *</label>
-              <input type="text" id="inpSku" required placeholder="e.g. DRS-GEO-101-BLU-FS" class="w-full p-2.5 border rounded-lg text-sm">
+              <input type="text" id="inpSku" required placeholder="e.g. A1, DRS-GEO-101-BLU-FS" class="w-full p-2.5 border rounded-lg text-sm">
             </div>
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">Quantity Issued *</label>
@@ -1105,7 +1206,7 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">Product SKU *</label>
-              <input type="text" id="inpSku" required placeholder="e.g. DRS-GEO-101-BLU-FS" class="w-full p-2.5 border rounded-lg text-sm">
+              <input type="text" id="inpSku" required placeholder="e.g. A1, DRS-GEO-101-BLU-FS" class="w-full p-2.5 border rounded-lg text-sm">
             </div>
             <div>
               <label class="block text-xs font-semibold text-slate-600 mb-1">Return Quantity *</label>
@@ -1134,15 +1235,7 @@
       }
     }
 
-    function calculateSaleTotals() {
-      const qty = Number(document.getElementById("inpQty")?.value || 1);
-      const mrp = Number(document.getElementById("inpMrp")?.value || 0);
-      const discount = Number(document.getElementById("inpDiscountAmount")?.value || 0);
-      const net = Math.max(0, (qty * mrp) - discount);
-      const netField = document.getElementById("inpNetPayable");
-      if (netField) netField.value = net;
-    }
-
+    // 7. Form Submit Handler
     async function handleFormSubmit(e) {
       e.preventDefault();
       const statusBox = document.getElementById("formStatusContainer");
@@ -1192,7 +1285,7 @@
         payload.lotNo = document.getElementById("inpPurchLotNo").value;
         payload.paymentStatus = document.getElementById("inpPurchStatus").value;
       } else if (actionType === "recordSale") {
-        payload.sku = document.getElementById("inpSku").value;
+        payload.sku = (document.getElementById("inpSku")?.value || "").trim().toUpperCase();
         payload.channel = document.getElementById("inpChannel").value;
         payload.customerOrReseller = document.getElementById("inpParty").value;
         payload.qtySold = document.getElementById("inpQty").value;
@@ -1203,12 +1296,12 @@
         payload.paymentMode = document.getElementById("inpPayMode").value;
         payload.paymentStatus = document.getElementById("inpPayStatus").value;
       } else if (actionType === "issueConsignment") {
-        payload.sku = document.getElementById("inpSku").value;
+        payload.sku = (document.getElementById("inpSku")?.value || "").trim().toUpperCase();
         payload.resellerName = document.getElementById("inpParty").value;
         payload.qtyIssued = document.getElementById("inpQty").value;
         payload.resellerBaseRate = document.getElementById("inpBaseRate").value;
       } else if (actionType === "recordReturn") {
-        payload.sku = document.getElementById("inpSku").value;
+        payload.sku = (document.getElementById("inpSku")?.value || "").trim().toUpperCase();
         payload.returnDirection = document.getElementById("inpDirection").value;
         payload.partyName = document.getElementById("inpParty").value;
         payload.returnQty = document.getElementById("inpQty").value;
@@ -1229,8 +1322,10 @@
           statusBox.innerHTML = `<i class="fa-solid fa-circle-check mr-1.5"></i> ${result.message}`;
           document.getElementById("actionForm").reset();
 
-          // Invalidate cache for views affected by new mutations
+          // Reset client caches so subsequent visits fetch freshly updated rows
           store.inventory = null;
+          store.batches = null;
+          store.batchCache = {};
           store.resellers = null;
           store.detailedConsignments = null;
           store.accounts = null;
@@ -1250,9 +1345,9 @@
       }
     }
 
-    // Boot: Load only the catalog first
+    // App Initialization
     window.onload = () => {
-      loadInventory();
+      loadBatches();
     };
   </script>
 </body>
