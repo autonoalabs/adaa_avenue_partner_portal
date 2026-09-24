@@ -3,12 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Adaa Avenue - Inventory & OMS</title>
+  <title>Adaa Avenue - Fast Bill Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-  <style>
-    .tab-btn.active { border-bottom: 3px solid #1B365D; color: #1B365D; font-weight: bold; }
-  </style>
 </head>
 <body class="bg-slate-100 text-slate-900 font-sans min-h-screen">
 
@@ -18,633 +15,203 @@
 
   <!-- Header -->
   <header class="bg-[#1B365D] text-white shadow-md sticky top-0 z-40">
-    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
-      <div class="flex items-center space-x-3">
-        <i class="fa-solid fa-store text-xl text-amber-300"></i>
-        <div>
-          <h1 class="text-lg font-bold tracking-wide">ADAA AVENUE</h1>
-          <p class="text-[11px] text-slate-300">Live Inventory, Ledgers & Accounts</p>
-        </div>
+    <div class="max-w-4xl mx-auto px-4 py-3 flex justify-between items-center">
+      <div class="flex items-center space-x-2.5">
+        <i class="fa-solid fa-store text-amber-300 text-lg"></i>
+        <h1 class="text-base font-bold tracking-wide">ADAA AVENUE</h1>
       </div>
-      <span class="text-xs bg-indigo-900/70 border border-indigo-700/60 px-2.5 py-1 rounded text-slate-200">
-        <i class="fa-solid fa-bolt text-amber-400 mr-1"></i> Fast Mode
-      </span>
+      <button onclick="fetchPortalData(true)" class="text-xs bg-indigo-900/80 hover:bg-indigo-900 border border-indigo-700/60 px-3 py-1.5 rounded-lg text-slate-200 flex items-center gap-1.5 transition">
+        <i class="fa-solid fa-arrows-rotate"></i> Refresh Data
+      </button>
     </div>
   </header>
 
-  <!-- Nav Tabs -->
-  <nav class="bg-white border-b border-slate-200 sticky top-[57px] z-30 overflow-x-auto">
-    <div class="max-w-7xl mx-auto px-4 flex space-x-6 text-sm min-w-max">
-      <button onclick="switchTab('inventory')" id="tab-inventory" class="tab-btn active py-3">Catalog & Stock</button>
-      <button onclick="switchTab('resellers')" id="tab-resellers" class="tab-btn py-3 text-slate-500">Reseller Ledger</button>
-      <button onclick="switchTab('purchasers')" id="tab-purchasers" class="tab-btn py-3 text-slate-500">Purchaser Ledger</button>
-      <button onclick="switchTab('accounts')" id="tab-accounts" class="tab-btn py-3 text-slate-500">Account Summary</button>
-      <button onclick="switchTab('actions')" id="tab-actions" class="tab-btn py-3 text-slate-500">Log Entry</button>
+  <main class="max-w-4xl mx-auto p-4 sm:p-6 space-y-4">
+
+    <!-- Step 1: Bill Dropdown Selector -->
+    <div class="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-200">
+      <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+        <i class="fa-solid fa-receipt mr-1 text-[#1B365D]"></i> Select Purchase Bill:
+      </label>
+      <select id="billSelector" onchange="onBillSelected()" class="w-full p-3 bg-slate-50 border border-slate-300 rounded-lg text-sm font-semibold text-slate-800 focus:ring-2 focus:ring-[#1B365D] focus:outline-none">
+        <option value="">Loading bills...</option>
+      </select>
     </div>
-  </nav>
 
-  <main class="max-w-7xl mx-auto p-4 sm:p-6">
-
-    <!-- ========================================== -->
-    <!-- TAB 1: CATALOG & STOCK (OPTIMIZED DRILLDOWN)-->
-    <!-- ========================================== -->
-    <section id="view-inventory" class="space-y-5">
-      <!-- Purchase Bills Selector -->
-      <div class="bg-white p-4 sm:p-5 rounded-xl shadow-sm border border-slate-200 space-y-3">
-        <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-slate-100 gap-2">
-          <div>
-            <h2 class="text-sm font-bold text-slate-800 flex items-center gap-2">
-              <i class="fa-solid fa-receipt text-[#1B365D]"></i> Select Purchase Bill & Wholesaler
-            </h2>
-            <p class="text-xs text-slate-500">Pick a sourcing date and wholesaler to load its specific items</p>
-          </div>
-          <button onclick="loadBatches(true)" class="text-xs text-indigo-700 hover:text-indigo-900 font-semibold flex items-center gap-1 self-start sm:self-auto">
-            <i class="fa-solid fa-arrows-rotate"></i> Refresh Bills
-          </button>
+    <!-- Step 2: Line Items Table -->
+    <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+        <div>
+          <h2 id="activeBillHeader" class="text-sm font-bold text-slate-800">Bill Items</h2>
+          <p id="activeBillSubtext" class="text-xs text-slate-500">Pick a bill above to view available stock</p>
         </div>
-
-        <div id="batchPillsLoading" class="py-4 text-center text-xs text-slate-500">
-          <i class="fa-solid fa-spinner fa-spin mr-1 text-[#1B365D]"></i> Loading purchase dates...
-        </div>
-
-        <div id="batchPillsContainer" class="flex flex-wrap gap-2.5 pt-1"></div>
+        <span id="itemsCountBadge" class="hidden text-xs bg-indigo-100 text-indigo-900 font-bold px-2 py-0.5 rounded">0 items</span>
       </div>
 
-      <!-- Search & Status Filter Bar for Active Bill Items -->
-      <div id="batchItemsControls" class="hidden bg-white p-4 rounded-xl shadow-sm border border-slate-200">
-        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-          <div>
-            <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-600 block">Active Bill Batch</span>
-            <h3 id="activeBatchTitle" class="text-sm font-extrabold text-slate-900">Wholesaler Name</h3>
-          </div>
-          <div class="flex flex-wrap sm:flex-nowrap gap-2 w-full sm:w-auto">
-            <div class="relative flex-grow sm:w-64">
-              <i class="fa-solid fa-magnifying-glass absolute left-3 top-2.5 text-slate-400 text-xs"></i>
-              <input type="text" id="searchInput" onkeyup="filterItems()" placeholder="Filter by SKU, fabric, color..." 
-                     class="w-full pl-8 pr-3 py-1.5 bg-slate-50 border border-slate-300 rounded-lg text-xs focus:ring-2 focus:ring-[#1B365D]">
-            </div>
-            <select id="statusFilter" onchange="filterItems()" class="py-1.5 px-2 bg-slate-50 border border-slate-300 rounded-lg text-xs">
-              <option value="ALL">All Stock Statuses</option>
-              <option value="In Stock">In Stock Only</option>
-              <option value="Low Stock">Low Stock</option>
-              <option value="Out of Stock">Out of Stock</option>
-            </select>
-          </div>
-        </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left text-sm">
+          <thead class="bg-slate-100 text-slate-700 text-xs uppercase font-semibold">
+            <tr>
+              <th class="p-3">Product Code</th>
+              <th class="p-3 text-right">Selling MRP</th>
+              <th class="p-3 text-center">Available Stock</th>
+              <th class="p-3 text-center">Action</th>
+            </tr>
+          </thead>
+          <tbody id="itemsTableBody" class="divide-y divide-slate-200 text-slate-700">
+            <tr><td colspan="4" class="text-center p-6 text-slate-400">Loading live data...</td></tr>
+          </tbody>
+        </table>
       </div>
-
-      <!-- Item Loader & Product Grid -->
-      <div id="catalogLoading" class="text-center py-10 hidden">
-        <i class="fa-solid fa-spinner fa-spin text-2xl text-indigo-900"></i>
-        <p class="text-xs text-slate-500 mt-2 font-medium">Fetching items for selected bill...</p>
-      </div>
-
-      <div id="productGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 hidden"></div>
-    </section>
-
-    <!-- ========================================== -->
-    <!-- TAB 2: RESELLER LEDGERS (DRILL-DOWN)       -->
-    <!-- ========================================== -->
-    <section id="view-resellers" class="hidden space-y-6">
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-          <div>
-            <h2 class="font-bold text-slate-800 text-sm">Reseller Balances & Outstandings</h2>
-            <p class="text-xs text-slate-500">Overview of holdings, billing, and balance dues</p>
-          </div>
-          <button onclick="loadResellers(true)" class="text-xs text-indigo-700 hover:text-indigo-900 font-semibold flex items-center gap-1">
-            <i class="fa-solid fa-arrows-rotate"></i> Refresh Ledger
-          </button>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm">
-            <thead class="bg-slate-100 text-slate-700 text-xs uppercase font-semibold">
-              <tr>
-                <th class="p-3">Reseller</th>
-                <th class="p-3 text-center">Holding</th>
-                <th class="p-3 text-center">Sold</th>
-                <th class="p-3 text-center">Returned</th>
-                <th class="p-3 text-right">Total Billing</th>
-                <th class="p-3 text-right">Received</th>
-                <th class="p-3 text-right">Balance Due</th>
-                <th class="p-3 text-center">Status</th>
-                <th class="p-3 text-center">Action</th>
-              </tr>
-            </thead>
-            <tbody id="resellerTableBody" class="divide-y divide-slate-200 text-slate-700">
-              <tr><td colspan="9" class="text-center p-6 text-slate-400">Click to load reseller records.</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <!-- Reseller Detail Panel -->
-      <div id="resellerDetailPanel" class="hidden bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="p-4 bg-indigo-50/70 border-b border-indigo-100 flex justify-between items-center">
-          <div>
-            <span class="text-xs font-semibold text-indigo-700 uppercase tracking-wide">Consignment History</span>
-            <h3 id="detailPanelResellerTitle" class="text-base font-bold text-slate-900">Reseller Name</h3>
-          </div>
-          <button onclick="closeResellerDetails()" class="text-slate-400 hover:text-slate-600 text-sm font-semibold p-1">
-            <i class="fa-solid fa-xmark text-lg"></i>
-          </button>
-        </div>
-
-        <div class="p-4 sm:p-6 space-y-4">
-          <div>
-            <label class="block text-xs font-bold text-slate-600 uppercase mb-2">Select Consignment Date / Batch:</label>
-            <div id="resellerDatePills" class="flex flex-wrap gap-2"></div>
-          </div>
-
-          <div id="resellerDateItemsWrapper" class="hidden pt-3 border-t border-slate-200">
-            <h4 id="selectedDateHeader" class="text-xs font-bold text-slate-700 uppercase mb-3">Items Issued on Selected Date</h4>
-            <div class="overflow-x-auto">
-              <table class="w-full text-left text-xs">
-                <thead class="bg-slate-100 text-slate-700 font-semibold uppercase">
-                  <tr>
-                    <th class="p-2.5">Issue ID</th>
-                    <th class="p-2.5">SKU</th>
-                    <th class="p-2.5 text-center">Issued</th>
-                    <th class="p-2.5 text-right">Base Rate</th>
-                    <th class="p-2.5 text-right">Total Amount</th>
-                    <th class="p-2.5 text-center">Sold</th>
-                    <th class="p-2.5 text-center">Returned</th>
-                    <th class="p-2.5 text-center">Current Holding</th>
-                    <th class="p-2.5 text-center">Batch Status</th>
-                  </tr>
-                </thead>
-                <tbody id="resellerDateItemsBody" class="divide-y divide-slate-200 text-slate-700"></tbody>
-              </table>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ========================================== -->
-    <!-- TAB 3: PURCHASER LEDGER                    -->
-    <!-- ========================================== -->
-    <section id="view-purchasers" class="hidden">
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-          <div>
-            <h2 class="font-bold text-slate-800 text-sm">Wholesaler Inward Purchase Ledger</h2>
-            <p class="text-xs text-slate-500">Track purchase bills, GST, landed costs, and wholesaler returns</p>
-          </div>
-          <button onclick="loadPurchasers(true)" class="text-xs text-indigo-700 hover:text-indigo-900 font-semibold flex items-center gap-1">
-            <i class="fa-solid fa-arrows-rotate"></i> Refresh Purchases
-          </button>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm">
-            <thead class="bg-slate-100 text-slate-700 text-xs uppercase font-semibold">
-              <tr>
-                <th class="p-3">Lot / Bill</th>
-                <th class="p-3">Date</th>
-                <th class="p-3">Trip ID</th>
-                <th class="p-3">Wholesaler</th>
-                <th class="p-3">Market</th>
-                <th class="p-3">Tax</th>
-                <th class="p-3 text-center">Bought</th>
-                <th class="p-3 text-right">Bill Amt</th>
-                <th class="p-3 text-right">Tax (5%)</th>
-                <th class="p-3 text-right">Trip Expense</th>
-                <th class="p-3 text-right">Total Landed</th>
-                <th class="p-3 text-center">Returned</th>
-                <th class="p-3 text-center">Retained</th>
-                <th class="p-3 text-center">Status</th>
-              </tr>
-            </thead>
-            <tbody id="purchaserTableBody" class="divide-y divide-slate-200 text-xs text-slate-700">
-              <tr><td colspan="14" class="text-center p-6 text-slate-400">Click to load purchases.</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- ========================================== -->
-    <!-- TAB 4: ACCOUNT SUMMARY                     -->
-    <!-- ========================================== -->
-    <section id="view-accounts" class="hidden">
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <div class="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-          <div>
-            <h2 class="font-bold text-slate-800 text-sm">Trip-Wise P&L & Capital Recovery Status</h2>
-            <p class="text-xs text-slate-500">Trip investment capital recovery vs revenue</p>
-          </div>
-          <button onclick="loadAccounts(true)" class="text-xs text-indigo-700 hover:text-indigo-900 font-semibold flex items-center gap-1">
-            <i class="fa-solid fa-arrows-rotate"></i> Refresh Accounts
-          </button>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm">
-            <thead class="bg-slate-100 text-slate-700 text-xs uppercase font-semibold">
-              <tr>
-                <th class="p-3">Trip ID</th>
-                <th class="p-3">Date</th>
-                <th class="p-3">Market</th>
-                <th class="p-3 text-right">Purchases</th>
-                <th class="p-3 text-right">Expenses</th>
-                <th class="p-3 text-right">Total Investment</th>
-                <th class="p-3 text-center">Bought</th>
-                <th class="p-3 text-center">Sold</th>
-                <th class="p-3 text-center">Sold %</th>
-                <th class="p-3 text-right">Sales Revenue</th>
-                <th class="p-3 text-right">Gross Profit</th>
-                <th class="p-3 text-center">Trip Recovery Status</th>
-              </tr>
-            </thead>
-            <tbody id="accountTableBody" class="divide-y divide-slate-200 text-xs text-slate-700">
-              <tr><td colspan="12" class="text-center p-6 text-slate-400">Click to load account summary.</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </section>
-
-    <!-- ========================================== -->
-    <!-- TAB 5: LOG ENTRY                           -->
-    <!-- ========================================== -->
-    <section id="view-actions" class="hidden">
-      <div class="max-w-3xl mx-auto bg-white p-6 rounded-xl shadow-sm border border-slate-200">
-        <div class="flex flex-wrap gap-2 mb-6 border-b border-slate-200 pb-3">
-          <button type="button" onclick="setActionForm('product')" id="btn-form-product" class="text-xs font-bold px-3 py-1.5 rounded-lg bg-[#1B365D] text-white">🏷️ + New Product</button>
-          <button type="button" onclick="setActionForm('newtrip')" id="btn-form-newtrip" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700">🗺️ + New Trip</button>
-          <button type="button" onclick="setActionForm('subexpense')" id="btn-form-subexpense" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700">🧾 + Trip Sub-Expense</button>
-          <button type="button" onclick="setActionForm('purchase')" id="btn-form-purchase" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700">📦 + Purchase Bill</button>
-          <button type="button" onclick="setActionForm('sale')" id="btn-form-sale" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700">💰 Record Sale</button>
-          <button type="button" onclick="setActionForm('consignment')" id="btn-form-consignment" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700">🤝 Issue Consignment</button>
-          <button type="button" onclick="setActionForm('return')" id="btn-form-return" class="text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700">🔄 Record Return</button>
-        </div>
-
-        <form id="actionForm" onsubmit="handleFormSubmit(event)" class="space-y-4">
-          <input type="hidden" id="formActionType" value="addProduct">
-          <div id="dynamicFields" class="space-y-4"></div>
-
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Remarks / Reference</label>
-            <input type="text" id="inpNotes" placeholder="Optional reference notes" class="w-full p-2.5 border rounded-lg text-sm">
-          </div>
-
-          <button type="submit" id="btnSubmitForm" class="w-full bg-[#1B365D] hover:bg-[#12243e] text-white font-bold py-3 rounded-lg text-sm shadow">
-            Submit Record
-          </button>
-          <div id="formStatusContainer" class="hidden mt-3 p-3 rounded-lg text-xs font-semibold text-center"></div>
-        </form>
-      </div>
-    </section>
+    </div>
 
   </main>
 
+  <!-- Quick Sale Modal Prompt -->
+  <div id="saleModal" class="hidden fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full p-5 space-y-4 animate-in fade-in zoom-in duration-150">
+      <div class="flex justify-between items-start border-b border-slate-100 pb-3">
+        <div>
+          <span class="text-[10px] font-bold text-indigo-700 uppercase">Log Sale (1 Piece)</span>
+          <h3 id="modalSkuTitle" class="text-base font-extrabold text-slate-900">SKU</h3>
+        </div>
+        <button onclick="closeSaleModal()" class="text-slate-400 hover:text-slate-600 text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form onsubmit="submitSale(event)" class="space-y-3">
+        <input type="hidden" id="modalSku">
+        
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Sold By (Reseller / Channel):</label>
+          <select id="modalReseller" class="w-full p-2.5 border border-slate-300 rounded-lg text-sm bg-slate-50 font-medium">
+            <option value="Direct Retail">Direct Retail Walk-in</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-xs font-semibold text-slate-600 mb-1">Actual Sold Price (₹):</label>
+          <input type="number" id="modalPrice" required min="1" class="w-full p-2.5 border border-slate-300 rounded-lg text-base font-bold text-[#1B365D] focus:ring-2 focus:ring-[#1B365D]">
+          <span id="modalDefaultMrpHint" class="text-[11px] text-slate-400 mt-1 block">Default MRP: ₹0</span>
+        </div>
+
+        <div class="pt-2 flex gap-2">
+          <button type="button" onclick="closeSaleModal()" class="w-1/3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-xs transition">
+            Cancel
+          </button>
+          <button type="submit" id="btnConfirmSale" class="w-2/3 py-2.5 bg-[#1B365D] hover:bg-slate-800 text-white font-bold rounded-lg text-xs shadow transition">
+            Confirm Sale
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
   <script>
-    const store = {
-      inventory: null,
-      batches: null,
-      batchCache: {},
-      resellers: null,
-      detailedConsignments: null,
-      purchasers: null,
-      accounts: null,
-      trips: null
-    };
+    let portalData = { bills: [], resellers: [] };
 
-    let selectedResellerName = null;
-    let activeSelectedLotNo = null;
-
-    // Convert Google Drive view URLs to direct embeddable CDN links
-    function formatDriveUrl(url) {
-      if (!url || typeof url !== 'string') return '';
-      const match = url.match(/\/file\/d\/([a-zA-Z0-9_-]+)/) || url.match(/id=([a-zA-Z0-9_-]+)/);
-      if (match && match[1]) {
-        return `https://lh3.googleusercontent.com/d/${match[1]}`;
-      }
-      return url;
-    }
-
-    // Convert any date format safely to YYYY-MM-DD
-    function parseToStandardDate(dateStr) {
-      if (!dateStr) return null;
-      if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) return dateStr;
-      const parsed = new Date(dateStr);
-      if (isNaN(parsed.getTime())) return null;
-      return parsed.toISOString().split("T")[0];
-    }
-
-    // UI Error Component
-    function renderErrorBox(title, details, retryFnName) {
-      return `
-        <div class="p-4 bg-rose-50 border border-rose-200 rounded-xl max-w-lg mx-auto text-center shadow-sm">
-          <div class="flex items-center justify-center text-rose-600 mb-1.5">
-            <i class="fa-solid fa-triangle-exclamation mr-2 text-base"></i>
-            <span class="font-bold text-xs uppercase tracking-wide">${title}</span>
-          </div>
-          <p class="text-xs text-rose-700 break-words font-mono bg-white/70 p-2 rounded border border-rose-100 my-2">${details}</p>
-          <button onclick="${retryFnName}" class="mt-1 px-4 py-1.5 bg-[#1B365D] hover:bg-slate-800 text-white rounded text-xs font-bold shadow transition">
-            ↻ Retry Connection
-          </button>
-        </div>`;
-    }
-
-    // Network Fetcher with Timeout
-    async function safeFetch(url, timeoutMs = 25000) {
-      const controller = new AbortController();
-      const id = setTimeout(() => controller.abort(), timeoutMs);
+    async function fetchPortalData(force = false) {
+      const selector = document.getElementById("billSelector");
+      const tbody = document.getElementById("itemsTableBody");
+      selector.innerHTML = `<option value="">Loading purchase bills...</option>`;
+      tbody.innerHTML = `<tr><td colspan="4" class="text-center p-6 text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading live stock...</td></tr>`;
 
       try {
-        const res = await fetch(url, { signal: controller.signal });
-        clearTimeout(id);
+        const res = await fetch(`${API_URL}?action=getPortalView`);
+        const json = await res.json();
 
-        if (!res.ok) {
-          throw new Error(`Server responded with HTTP ${res.status}: ${res.statusText}`);
+        if (json.status === "success") {
+          portalData = json;
+          populateBillDropdown(json.bills);
+          populateResellerDropdown(json.resellers);
+        } else {
+          throw new Error(json.message || "Failed to load data");
         }
-
-        const data = await res.json();
-        if (data.status === "error") {
-          throw new Error(`[Step: ${data.step || 'Unknown'}] ${data.message}`);
-        }
-
-        return data;
       } catch (err) {
-        clearTimeout(id);
-        if (err.name === "AbortError") {
-          throw new Error(`Request timed out after ${timeoutMs / 1000}s. Server may be warming up.`);
-        }
-        throw err;
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center p-4 text-rose-600 font-semibold">Error: ${err.message}. <button onclick="fetchPortalData(true)" class="underline ml-2 text-indigo-700 font-bold">Retry</button></td></tr>`;
       }
     }
 
-    // Tab Navigation
-    function switchTab(tabId) {
-      ['inventory', 'resellers', 'purchasers', 'accounts', 'actions'].forEach(t => {
-        const el = document.getElementById(`view-${t}`);
-        const btn = document.getElementById(`tab-${t}`);
-        if (el) el.classList.add('hidden');
-        if (btn) { btn.classList.remove('active'); btn.classList.add('text-slate-500'); }
-      });
+    function populateBillDropdown(bills) {
+      const selector = document.getElementById("billSelector");
+      selector.innerHTML = "";
 
-      const targetEl = document.getElementById(`view-${tabId}`);
-      const targetBtn = document.getElementById(`tab-${tabId}`);
-      if (targetEl) targetEl.classList.remove('hidden');
-      if (targetBtn) { targetBtn.classList.add('active'); targetBtn.classList.remove('text-slate-500'); }
-
-      if (tabId === 'inventory' && !store.batches) loadBatches();
-      if (tabId === 'resellers' && !store.resellers) loadResellers();
-      if (tabId === 'purchasers' && !store.purchasers) loadPurchasers();
-      if (tabId === 'accounts' && !store.accounts) loadAccounts();
-      if (tabId === 'actions') {
-        if (!store.trips) loadTrips();
-        setActionForm('product');
-      }
-    }
-
-    // 1. Load Batches (Tier 1 Drilldown)
-    async function loadBatches(force = false) {
-      if (store.batches && !force) {
-        renderBatchPills(store.batches);
+      if (!bills || bills.length === 0) {
+        selector.innerHTML = `<option value="">No bills found. Run syncPortalStockView() in your maintenance script.</option>`;
         return;
       }
 
-      const loader = document.getElementById("batchPillsLoading");
-      const container = document.getElementById("batchPillsContainer");
-      if (loader) loader.classList.remove("hidden");
-      if (container) container.innerHTML = "";
-
-      try {
-        const json = await safeFetch(`${API_URL}?action=getPurchaseBatches`);
-        store.batches = json.data || [];
-        if (loader) loader.classList.add("hidden");
-        renderBatchPills(store.batches);
-      } catch (err) {
-        if (loader) {
-          loader.innerHTML = `<span class="text-rose-600 text-xs font-semibold">Failed to load bills: ${err.message}</span> <button onclick="loadBatches(true)" class="underline ml-2 text-indigo-700 font-bold">Retry</button>`;
-        }
-      }
-    }
-
-    function renderBatchPills(batches) {
-      const container = document.getElementById("batchPillsContainer");
-      if (!container) return;
-      container.innerHTML = "";
-
-      if (!batches || batches.length === 0) {
-        container.innerHTML = `<p class="text-xs text-slate-400">No purchase bills found in 02_Purchases_Inward.</p>`;
-        return;
-      }
-
-      batches.forEach(b => {
-        const escapedSupplier = (b.supplierName || 'Unknown').replace(/'/g, "\\'");
-        container.innerHTML += `
-          <button onclick="selectBatch('${b.lotNo}', '${escapedSupplier}', '${b.date}')" 
-                  id="pill-batch-${b.lotNo}" 
-                  class="batch-pill text-left p-3 border border-slate-200 rounded-xl bg-slate-50 hover:bg-indigo-50 hover:border-indigo-400 transition flex flex-col justify-between shadow-sm">
-            <div class="flex items-center justify-between gap-2 mb-1">
-              <span class="text-xs font-extrabold text-slate-800">${b.supplierName}</span>
-              <span class="text-[10px] font-mono font-bold text-indigo-700 bg-white px-1.5 py-0.5 rounded border border-indigo-100">${b.lotNo}</span>
-            </div>
-            <div class="flex items-center justify-between text-[11px] text-slate-500 gap-3">
-              <span><i class="fa-regular fa-calendar mr-1"></i>${b.date || 'Undated'}</span>
-              <span class="font-semibold text-slate-700 bg-slate-200/60 px-1.5 py-0.2 rounded text-[10px]">${b.totalPieces} pcs</span>
-            </div>
-          </button>
-        `;
+      bills.forEach((b) => {
+        const opt = document.createElement("option");
+        opt.value = b.billRef;
+        // Ensures billRef is prefixed if not already included in the label
+        opt.innerText = b.label.startsWith(b.billRef) ? b.label : `${b.billRef} — ${b.label}`;
+        selector.appendChild(opt);
       });
 
-      if (batches.length > 0 && !activeSelectedLotNo) {
-        selectBatch(batches[0].lotNo, batches[0].supplierName, batches[0].date);
-      }
+      onBillSelected();
     }
 
-    async function selectBatch(lotNo, supplierName, dateStr) {
-      activeSelectedLotNo = lotNo;
-
-      document.querySelectorAll(".batch-pill").forEach(el => {
-        el.classList.remove("border-[#1B365D]", "bg-indigo-50/80", "ring-2", "ring-[#1B365D]");
-        el.classList.add("border-slate-200", "bg-slate-50");
-      });
-      const activeBtn = document.getElementById(`pill-batch-${lotNo}`);
-      if (activeBtn) {
-        activeBtn.classList.add("border-[#1B365D]", "bg-indigo-50/80", "ring-2", "ring-[#1B365D]");
-      }
-
-      const controls = document.getElementById("batchItemsControls");
-      const title = document.getElementById("activeBatchTitle");
-      if (controls) controls.classList.remove("hidden");
-      if (title) title.innerText = `${supplierName} (Lot: ${lotNo}) — Purchased on ${dateStr}`;
-
-      if (store.batchCache[lotNo]) {
-        renderCatalog(store.batchCache[lotNo]);
-        return;
-      }
-
-      const loader = document.getElementById("catalogLoading");
-      const grid = document.getElementById("productGrid");
-      if (loader) loader.classList.remove("hidden");
-      if (grid) grid.classList.add("hidden");
-
-      try {
-        const json = await safeFetch(`${API_URL}?action=getInventory&lotRef=${encodeURIComponent(lotNo)}`);
-        const items = (json.data || []).map(item => ({ ...item, dateAdded: dateStr }));
-        store.batchCache[lotNo] = items;
-        if (loader) loader.classList.add("hidden");
-        renderCatalog(items);
-      } catch (err) {
-        if (loader) {
-          loader.innerHTML = renderErrorBox("Failed to Load Items for Bill", err.message, `selectBatch('${lotNo}', '${supplierName}', '${dateStr}')`);
-        }
-      }
-    }
-
-    function renderCatalog(items) {
-      const grid = document.getElementById("productGrid");
-      const loader = document.getElementById("catalogLoading");
-      if (!grid) return;
-      grid.innerHTML = "";
-      if (loader) loader.classList.add("hidden");
-      grid.classList.remove("hidden");
-
-      if (!items || items.length === 0) {
-        grid.innerHTML = `<p class="col-span-full text-center text-slate-400 py-8">No products found matching criteria.</p>`;
-        return;
-      }
-
-      items.forEach(p => {
-        const badgeColor = p.status === "In Stock" ? "bg-emerald-100 text-emerald-800" :
-                           p.status === "Low Stock" ? "bg-amber-100 text-amber-800" : "bg-rose-100 text-rose-800";
-
-        let resellerBreakdownHtml = "";
-        if (p.resellerHoldings && p.resellerHoldings.length > 0) {
-          resellerBreakdownHtml = p.resellerHoldings.map(r => 
-            `<span class="bg-indigo-50 text-indigo-900 px-1.5 py-0.5 rounded text-[10px] font-medium border border-indigo-100">${r.name}: ${r.qty} pcs</span>`
-          ).join(" ");
-        }
-
-        const resellerMarginPct = isNaN(p.resellerMargin) ? 15 : Math.round(p.resellerMargin * 100);
-
-        grid.innerHTML += `
-          <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col justify-between hover:shadow-md transition">
-            <div class="h-64 sm:h-72 bg-slate-50 flex items-center justify-center overflow-hidden border-b border-slate-100 relative p-2">
-              ${p.imageUrl && p.imageUrl.startsWith("http") 
-                ? `<img src="${formatDriveUrl(p.imageUrl)}" alt="${p.name}" class="max-h-full max-w-full object-contain mx-auto" loading="lazy" referrerpolicy="no-referrer">` 
-                : `<i class="fa-solid fa-shirt text-slate-300 text-4xl"></i>`}
-              <span class="absolute top-2 right-2 text-[10px] font-bold px-2 py-0.5 rounded shadow-sm ${badgeColor}">${p.status}</span>
-            </div>
-
-            <div class="p-4 flex-grow flex flex-col justify-between space-y-3">
-              <div>
-                <div class="flex justify-between items-start gap-1 mb-1">
-                  <span class="text-xs font-mono font-bold text-[#1B365D] bg-indigo-50 px-2 py-0.5 rounded">${p.sku}</span>
-                  <span class="text-[11px] font-semibold text-slate-400">${p.dateAdded || ''}</span>
-                </div>
-                <h3 class="font-bold text-slate-800 text-sm mt-1 leading-snug">${p.name}</h3>
-                <p class="text-xs text-slate-500 mt-0.5">${p.fabric} • ${p.color} • ${p.size} • <span class="text-indigo-700 font-medium">${p.expenseId}</span></p>
-              </div>
-
-              <div class="bg-slate-50 p-2.5 rounded-lg border border-slate-200 space-y-1.5">
-                <div class="flex justify-between items-center text-xs">
-                  <span class="font-bold text-slate-700">📦 Total Available:</span>
-                  <span class="font-extrabold ${p.totalActiveInventory > 0 ? 'text-[#1B365D]' : 'text-rose-600'}">${p.totalActiveInventory || 0} pcs</span>
-                </div>
-                <div class="flex flex-wrap gap-1 text-[11px] text-slate-600">
-                  <span class="bg-slate-200/80 px-1.5 py-0.5 rounded text-[10px] font-medium">Godown: ${p.godownStock || 0} pcs</span>
-                  ${resellerBreakdownHtml}
-                </div>
-                <div class="flex justify-between items-center pt-1 border-t border-slate-200 text-[11px] text-emerald-700 font-semibold">
-                  <span>🔥 Total Sold:</span>
-                  <span>${p.totalSold || 0} pcs</span>
-                </div>
-              </div>
-
-              <div class="pt-2 border-t border-slate-100 flex justify-between items-end">
-                <div>
-                  <span class="text-[10px] text-slate-400 block uppercase font-medium">Retail MRP</span>
-                  <span class="text-base font-extrabold text-slate-900">₹${Number(p.retailMrp || 0).toLocaleString()}</span>
-                </div>
-                <div class="text-right">
-                  <span class="text-[10px] text-slate-400 block uppercase font-medium">Floor Rate (${resellerMarginPct}%)</span>
-                  <span class="text-xs font-bold text-indigo-700">₹${Number(p.resellerFloorRate || 0).toLocaleString()}</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        `;
+    function populateResellerDropdown(resellers) {
+      const resSelect = document.getElementById("modalReseller");
+      resSelect.innerHTML = `<option value="Direct Retail">Direct Retail Walk-in</option>`;
+      (resellers || []).forEach(r => {
+        const opt = document.createElement("option");
+        opt.value = r;
+        opt.innerText = r;
+        resSelect.appendChild(opt);
       });
     }
 
-    function filterItems() {
-      if (!activeSelectedLotNo || !store.batchCache[activeSelectedLotNo]) return;
-      const q = (document.getElementById("searchInput")?.value || "").toLowerCase();
-      const status = document.getElementById("statusFilter")?.value || "ALL";
+    function onBillSelected() {
+      const selectedRef = document.getElementById("billSelector").value;
+      const bill = portalData.bills.find(b => b.billRef === selectedRef);
+      const tbody = document.getElementById("itemsTableBody");
+      const header = document.getElementById("activeBillHeader");
+      const subtext = document.getElementById("activeBillSubtext");
+      const badge = document.getElementById("itemsCountBadge");
 
-      const filtered = store.batchCache[activeSelectedLotNo].filter(item => {
-        const matchesQuery = (item.sku || "").toLowerCase().includes(q) ||
-                             (item.name || "").toLowerCase().includes(q) ||
-                             (item.fabric || "").toLowerCase().includes(q) ||
-                             (item.color || "").toLowerCase().includes(q);
-
-        const matchesStatus = (status === "ALL") || (item.status === status);
-        return matchesQuery && matchesStatus;
-      });
-
-      renderCatalog(filtered);
-    }
-
-    // 2. Load Resellers
-    async function loadResellers(force = false) {
-      if (store.resellers && !force) {
-        renderResellers(store.resellers);
+      if (!bill) {
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center p-6 text-slate-400">Please select a bill.</td></tr>`;
         return;
       }
 
-      const tbody = document.getElementById("resellerTableBody");
-      if (tbody) {
-        tbody.innerHTML = `<tr><td colspan="9" class="text-center p-6 text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading balances...</td></tr>`;
-      }
+      header.innerText = bill.label;
+      // Changed "Lot Reference" to "Bill Number"
+      subtext.innerText = `Bill Number: ${bill.billRef}`;
+      badge.classList.remove("hidden");
+      badge.innerText = `${bill.items.length} items`;
 
-      try {
-        const json = await safeFetch(`${API_URL}?action=getResellerData`);
-        store.resellers = json.data.summary || [];
-        store.detailedConsignments = json.data.detailed || [];
-        renderResellers(store.resellers);
-      } catch (err) {
-        if (tbody) {
-          tbody.innerHTML = `<tr><td colspan="9" class="p-4">${renderErrorBox("Failed to Load Reseller Ledger", err.message, "loadResellers(true)")}</td></tr>`;
-        }
-      }
-    }
-
-    function renderResellers(resellers) {
-      const tbody = document.getElementById("resellerTableBody");
-      if (!tbody) return;
       tbody.innerHTML = "";
-      if (!resellers || resellers.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" class="text-center p-6 text-slate-400">No reseller records found.</td></tr>`;
+      if (bill.items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="text-center p-6 text-slate-400">No items registered under this bill.</td></tr>`;
         return;
       }
 
-      resellers.forEach(r => {
-        const isClear = r.accountHealth === "Clear Account";
-        const escapedName = (r.resellerName || '').replace(/'/g, "\\'");
+      bill.items.forEach(item => {
+        const isOutOfStock = item.stock <= 0;
+        
+        // Build sub-details line (Description • Color • Size)
+        const details = [item.description, item.color, item.size].filter(Boolean).join(" • ");
+
         tbody.innerHTML += `
-          <tr class="hover:bg-slate-50">
-            <td class="p-3 font-semibold text-slate-800">
-              ${r.resellerName}
-              <span class="text-xs text-slate-400 block font-normal">${r.phone || ''}</span>
+          <tr class="hover:bg-slate-50 transition">
+            <td class="p-3">
+              <span class="font-mono font-bold text-slate-900 text-sm block">${item.sku}</span>
+              ${details ? `<span class="text-xs text-slate-500 block mt-0.5">${details}</span>` : ''}
             </td>
-            <td class="p-3 text-center font-bold text-slate-700">${r.heldQty || 0}</td>
-            <td class="p-3 text-center text-slate-600">${r.soldQty || 0}</td>
-            <td class="p-3 text-center text-slate-600">${r.returnedQty || 0}</td>
-            <td class="p-3 text-right font-medium">₹${Number(r.totalBilling || 0).toLocaleString()}</td>
-            <td class="p-3 text-right text-emerald-600 font-medium">₹${Number(r.paymentsReceived || 0).toLocaleString()}</td>
-            <td class="p-3 text-right font-bold ${r.balanceDue > 0 ? 'text-rose-600' : 'text-slate-700'}">₹${Number(r.balanceDue || 0).toLocaleString()}</td>
+            <td class="p-3 text-right font-extrabold text-slate-900">₹${Number(item.mrp || 0).toLocaleString()}</td>
             <td class="p-3 text-center">
-              <span class="text-[11px] font-semibold px-2 py-0.5 rounded ${isClear ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">
-                ${r.accountHealth}
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${item.stock > 3 ? 'bg-emerald-100 text-emerald-800' : (item.stock > 0 ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800')}">
+                ${item.stock} pcs
               </span>
             </td>
             <td class="p-3 text-center">
-              <button onclick="openResellerDetails('${escapedName}')" class="px-3 py-1 bg-[#1B365D] hover:bg-slate-800 text-white rounded text-xs font-semibold shadow-sm transition flex items-center gap-1 mx-auto">
-                <i class="fa-solid fa-list-ul text-[10px]"></i> Details
+              <button onclick="openSaleModal('${item.sku}', ${item.mrp})" 
+                      ${isOutOfStock ? 'disabled' : ''} 
+                      class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 mx-auto shadow-sm ${isOutOfStock ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-[#1B365D] hover:bg-slate-800 text-white'}">
+                <i class="fa-solid fa-plus text-[10px]"></i> Add Sale
               </button>
             </td>
           </tr>
@@ -652,702 +219,61 @@
       });
     }
 
-    function openResellerDetails(resellerName) {
-      selectedResellerName = resellerName;
-      const panel = document.getElementById("resellerDetailPanel");
-      const title = document.getElementById("detailPanelResellerTitle");
-      const datePills = document.getElementById("resellerDatePills");
-      const itemsWrapper = document.getElementById("resellerDateItemsWrapper");
-
-      title.innerText = resellerName;
-      panel.classList.remove("hidden");
-      itemsWrapper.classList.add("hidden");
-      datePills.innerHTML = "";
-
-      const resellerConsignments = (store.detailedConsignments || []).filter(
-        c => (c.resellerName || '').trim().toLowerCase() === resellerName.trim().toLowerCase()
-      );
-
-      if (resellerConsignments.length === 0) {
-        datePills.innerHTML = `<p class="text-xs text-slate-400">No consignment records found for this reseller.</p>`;
-        panel.scrollIntoView({ behavior: 'smooth' });
-        return;
-      }
-
-      const uniqueDates = [...new Set(resellerConsignments.map(c => c.date))].sort().reverse();
-
-      uniqueDates.forEach(date => {
-        const batchPieces = resellerConsignments
-          .filter(c => c.date === date)
-          .reduce((sum, c) => sum + (c.issuedQty || 0), 0);
-
-        datePills.innerHTML += `
-          <button onclick="selectConsignmentDate('${date}')" id="pill-date-${date}" class="date-pill px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold text-slate-700 bg-white hover:bg-indigo-50 hover:border-indigo-400 transition flex items-center gap-1.5">
-            <i class="fa-regular fa-calendar-days text-indigo-700"></i> ${date || 'No Date'}
-            <span class="bg-slate-100 text-slate-600 px-1.5 py-0.2 rounded text-[10px]">${batchPieces} pcs</span>
-          </button>
-        `;
-      });
-
-      panel.scrollIntoView({ behavior: 'smooth' });
-      if (uniqueDates.length > 0) {
-        selectConsignmentDate(uniqueDates[0]);
-      }
+    function openSaleModal(sku, defaultMrp) {
+      document.getElementById("modalSku").value = sku;
+      document.getElementById("modalSkuTitle").innerText = `Log Sale: ${sku}`;
+      document.getElementById("modalPrice").value = defaultMrp;
+      document.getElementById("modalDefaultMrpHint").innerText = `Default Selling MRP: ₹${defaultMrp}`;
+      document.getElementById("saleModal").classList.remove("hidden");
+      document.getElementById("modalPrice").focus();
     }
 
-    function selectConsignmentDate(dateStr) {
-      document.querySelectorAll(".date-pill").forEach(btn => {
-        btn.classList.remove("bg-[#1B365D]", "text-white", "border-[#1B365D]");
-        btn.classList.add("bg-white", "text-slate-700", "border-slate-300");
-      });
-
-      const activeBtn = document.getElementById(`pill-date-${dateStr}`);
-      if (activeBtn) {
-        activeBtn.classList.remove("bg-white", "text-slate-700", "border-slate-300");
-        activeBtn.classList.add("bg-[#1B365D]", "text-white", "border-[#1B365D]");
-      }
-
-      const itemsWrapper = document.getElementById("resellerDateItemsWrapper");
-      const itemsBody = document.getElementById("resellerDateItemsBody");
-      const header = document.getElementById("selectedDateHeader");
-
-      header.innerText = `Stock Distribution for Consignment Date: ${dateStr || 'Undated'}`;
-      itemsWrapper.classList.remove("hidden");
-      itemsBody.innerHTML = "";
-
-      const matchingItems = (store.detailedConsignments || []).filter(
-        c => (c.resellerName || '').trim().toLowerCase() === selectedResellerName.trim().toLowerCase() && c.date === dateStr
-      );
-
-      if (matchingItems.length === 0) {
-        itemsBody.innerHTML = `<tr><td colspan="9" class="text-center p-4 text-slate-400">No stock records found for this date.</td></tr>`;
-        return;
-      }
-
-      matchingItems.forEach(item => {
-        itemsBody.innerHTML += `
-          <tr class="hover:bg-slate-50">
-            <td class="p-2.5 font-mono font-bold text-slate-700">${item.issueId}</td>
-            <td class="p-2.5 font-mono text-indigo-900 font-semibold">${item.sku}</td>
-            <td class="p-2.5 text-center font-bold text-slate-700">${item.issuedQty}</td>
-            <td class="p-2.5 text-right">₹${Number(item.baseRate || 0).toLocaleString()}</td>
-            <td class="p-2.5 text-right font-medium">₹${Number(item.totalBilling || 0).toLocaleString()}</td>
-            <td class="p-2.5 text-center text-emerald-700 font-semibold">${item.soldQty || 0}</td>
-            <td class="p-2.5 text-center text-rose-600 font-semibold">${item.returnedQty || 0}</td>
-            <td class="p-2.5 text-center font-bold ${item.heldQty > 0 ? 'text-[#1B365D]' : 'text-slate-400'}">${item.heldQty || 0}</td>
-            <td class="p-2.5 text-center">
-              <span class="text-[10px] font-medium px-2 py-0.5 rounded ${item.status === 'Holding Stock' ? 'bg-amber-100 text-amber-800' : 'bg-slate-100 text-slate-600'}">
-                ${item.status}
-              </span>
-            </td>
-          </tr>
-        `;
-      });
+    function closeSaleModal() {
+      document.getElementById("saleModal").classList.add("hidden");
     }
 
-    function closeResellerDetails() {
-      const panel = document.getElementById("resellerDetailPanel");
-      if (panel) panel.classList.add("hidden");
-      selectedResellerName = null;
-    }
-
-    // 3. Load Purchasers
-    async function loadPurchasers(force = false) {
-      if (store.purchasers && !force) {
-        renderPurchasers(store.purchasers);
-        return;
-      }
-
-      const tbody = document.getElementById("purchaserTableBody");
-      if (tbody) {
-        tbody.innerHTML = `<tr><td colspan="14" class="text-center p-6 text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading purchases...</td></tr>`;
-      }
-
-      try {
-        const json = await safeFetch(`${API_URL}?action=getPurchasers`);
-        store.purchasers = json.data || [];
-        renderPurchasers(store.purchasers);
-      } catch (err) {
-        if (tbody) {
-          tbody.innerHTML = `<tr><td colspan="14" class="p-4">${renderErrorBox("Failed to Load Purchaser Ledger", err.message, "loadPurchasers(true)")}</td></tr>`;
-        }
-      }
-    }
-
-    function renderPurchasers(purchasers) {
-      const tbody = document.getElementById("purchaserTableBody");
-      if (!tbody) return;
-      tbody.innerHTML = "";
-      if (!purchasers || purchasers.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="14" class="text-center p-6 text-slate-400">No purchase records found.</td></tr>`;
-        return;
-      }
-
-      purchasers.forEach(p => {
-        tbody.innerHTML += `
-          <tr class="hover:bg-slate-50">
-            <td class="p-3 font-mono font-bold text-slate-800">${p.lotNo}</td>
-            <td class="p-3 text-slate-500">${p.date}</td>
-            <td class="p-3 font-mono text-xs text-indigo-700">${p.expenseId}</td>
-            <td class="p-3 font-semibold text-slate-800">${p.supplierName}</td>
-            <td class="p-3 text-slate-500">${p.marketCity}</td>
-            <td class="p-3"><span class="px-1.5 py-0.5 rounded bg-slate-100 font-medium">${p.taxType}</span></td>
-            <td class="p-3 text-center font-bold text-slate-700">${p.totalPieces}</td>
-            <td class="p-3 text-right font-medium">₹${Number(p.billAmount || 0).toLocaleString()}</td>
-            <td class="p-3 text-right text-slate-500">₹${Number(p.taxAmount || 0).toLocaleString()}</td>
-            <td class="p-3 text-right text-indigo-800 font-medium">₹${Number(p.allocatedExpense || 0).toLocaleString()}</td>
-            <td class="p-3 text-right font-extrabold text-[#1B365D]">₹${Number(p.landedCost || 0).toLocaleString()}</td>
-            <td class="p-3 text-center text-rose-600 font-bold">${p.returnedToWholesaler}</td>
-            <td class="p-3 text-center font-bold text-emerald-700">${p.netRetained}</td>
-            <td class="p-3 text-center"><span class="text-[10px] px-2 py-0.5 rounded ${p.paymentStatus === 'Paid' ? 'bg-emerald-100 text-emerald-800 font-semibold' : 'bg-rose-100 text-rose-800'}">${p.paymentStatus}</span></td>
-          </tr>
-        `;
-      });
-    }
-
-    // 4. Load Accounts
-    async function loadAccounts(force = false) {
-      if (store.accounts && !force) {
-        renderAccounts(store.accounts);
-        return;
-      }
-
-      const tbody = document.getElementById("accountTableBody");
-      if (tbody) {
-        tbody.innerHTML = `<tr><td colspan="12" class="text-center p-6 text-slate-400"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Loading account summary...</td></tr>`;
-      }
-
-      try {
-        const json = await safeFetch(`${API_URL}?action=getAccounts`);
-        store.accounts = json.data || [];
-        renderAccounts(store.accounts);
-      } catch (err) {
-        if (tbody) {
-          tbody.innerHTML = `<tr><td colspan="12" class="p-4">${renderErrorBox("Failed to Load Account Summary", err.message, "loadAccounts(true)")}</td></tr>`;
-        }
-      }
-    }
-
-    function renderAccounts(accounts) {
-      const tbody = document.getElementById("accountTableBody");
-      if (!tbody) return;
-      tbody.innerHTML = "";
-      if (!accounts || accounts.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="12" class="text-center p-6 text-slate-400">No account summary records found.</td></tr>`;
-        return;
-      }
-
-      accounts.forEach(a => {
-        const isRecovered = String(a.recoveryStatus || "").includes("Capital Recovered");
-        tbody.innerHTML += `
-          <tr class="hover:bg-slate-50">
-            <td class="p-3 font-mono font-bold text-indigo-900">${a.tripId}</td>
-            <td class="p-3 text-slate-500">${a.date}</td>
-            <td class="p-3 font-semibold text-slate-800">${a.market}</td>
-            <td class="p-3 text-right">₹${Number(a.purchasesValue || 0).toLocaleString()}</td>
-            <td class="p-3 text-right">₹${Number(a.tripExpenses || 0).toLocaleString()}</td>
-            <td class="p-3 text-right font-bold text-[#1B365D]">₹${Number(a.totalInvestment || 0).toLocaleString()}</td>
-            <td class="p-3 text-center">${a.totalBought || 0}</td>
-            <td class="p-3 text-center font-bold">${a.totalSold || 0}</td>
-            <td class="p-3 text-center font-semibold text-indigo-700">${(Number(a.soldPct || 0) * 100).toFixed(1)}%</td>
-            <td class="p-3 text-right font-extrabold text-emerald-700">₹${Number(a.salesRevenue || 0).toLocaleString()}</td>
-            <td class="p-3 text-right font-extrabold text-indigo-900">₹${Number(a.grossProfit || 0).toLocaleString()}</td>
-            <td class="p-3 text-center"><span class="text-[10px] font-bold px-2 py-1 rounded ${isRecovered ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}">${a.recoveryStatus}</span></td>
-          </tr>
-        `;
-      });
-    }
-
-    // 5. Load Trips
-    async function loadTrips() {
-      try {
-        const json = await safeFetch(`${API_URL}?action=getTrips`);
-        store.trips = json.data || [];
-      } catch (err) {
-        console.warn("Could not load trips, defaulting to EXP-1:", err.message);
-        store.trips = [{ expenseId: "EXP-1", tripName: "Default Trip" }];
-      }
-    }
-
-    function getTripOptionsHtml() {
-      if (!store.trips || store.trips.length === 0) {
-        return `<option value="EXP-1">EXP-1 (Default Trip)</option>`;
-      }
-      return store.trips.map(t => `<option value="${t.expenseId}">${t.expenseId} - ${t.tripName || 'Trip'} (${t.date || ''})</option>`).join('');
-    }
-
-    // 6. Log Entry Forms & Dynamic Auto-Populate Logic
-    function onSkuEntered() {
-      const skuInput = document.getElementById("inpSku");
-      const mrpInput = document.getElementById("inpMrp");
-      const hint = document.getElementById("skuHint");
-      if (!skuInput || !mrpInput) return;
-
-      const entered = skuInput.value.trim().toLowerCase();
-      if (!entered) {
-        if (hint) hint.innerText = "Type SKU to auto-populate MRP";
-        return;
-      }
-
-      let matched = null;
-
-      if (store.batchCache) {
-        for (const lot in store.batchCache) {
-          const found = store.batchCache[lot].find(p => (p.sku || "").toLowerCase() === entered);
-          if (found) { matched = found; break; }
-        }
-      }
-
-      if (!matched && store.inventory) {
-        matched = store.inventory.find(p => (p.sku || "").toLowerCase() === entered);
-      }
-
-      if (matched && matched.retailMrp) {
-        mrpInput.value = matched.retailMrp;
-        if (hint) hint.innerHTML = `<span class="text-emerald-600 font-semibold">✓ Found: ${matched.name} (MRP: ₹${matched.retailMrp})</span>`;
-        calculateSaleTotals();
-      } else {
-        if (hint) hint.innerHTML = `<span class="text-slate-400">SKU will be verified against Product Master on submit</span>`;
-      }
-    }
-
-    function calculateSaleTotals() {
-      const qty = Number(document.getElementById("inpQty")?.value || 1);
-      const mrp = Number(document.getElementById("inpMrp")?.value || 0);
-      const discount = Number(document.getElementById("inpDiscountAmount")?.value || 0);
-      const net = Math.max(0, (qty * mrp) - discount);
-      const netField = document.getElementById("inpNetPayable");
-      if (netField) netField.value = net;
-    }
-
-    function setActionForm(type) {
-      const container = document.getElementById("dynamicFields");
-      const actionHidden = document.getElementById("formActionType");
-      if (!container || !actionHidden) return;
-      
-      ['product', 'newtrip', 'subexpense', 'purchase', 'sale', 'consignment', 'return'].forEach(btn => {
-        const b = document.getElementById(`btn-form-${btn}`);
-        if (b) b.className = "text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 text-slate-700";
-      });
-      const currentBtn = document.getElementById(`btn-form-${type}`);
-      if (currentBtn) currentBtn.className = "text-xs font-bold px-3 py-1.5 rounded-lg bg-[#1B365D] text-white";
-
-      if (type === 'product') {
-        actionHidden.value = "addProduct";
-        container.innerHTML = `
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Link to Wholesale Trip *</label>
-              <select id="inpProdExpId" class="w-full p-2.5 border rounded-lg text-sm bg-indigo-50 font-medium">
-                ${getTripOptionsHtml()}
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Item Title / Description *</label>
-              <input type="text" id="inpProdName" required placeholder="e.g. Heavy Georgette Suit" class="w-full p-2.5 border rounded-lg text-sm">
-            </div>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Fabric / Category *</label>
-              <input type="text" id="inpProdFabric" required placeholder="Georgette / Cotton" class="w-full p-2.5 border rounded-lg text-sm">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Design No</label>
-              <input type="text" id="inpProdDesign" placeholder="D-105" class="w-full p-2.5 border rounded-lg text-sm">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Colour</label>
-              <input type="text" id="inpProdColor" placeholder="Navy Blue" class="w-full p-2.5 border rounded-lg text-sm">
-            </div>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-5 gap-3">
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Size</label>
-              <input type="text" id="inpProdSize" value="Free Size" class="w-full p-2.5 border rounded-lg text-sm">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Wholesale Cost *</label>
-              <input type="number" id="inpProdCost" required placeholder="850" class="w-full p-2.5 border rounded-lg text-sm">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Retail Markup %</label>
-              <input type="number" id="inpProdRetailMargin" step="0.05" value="0.35" class="w-full p-2.5 border rounded-lg text-sm">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Reseller Margin % *</label>
-              <input type="number" id="inpProdResellerMargin" step="0.05" value="0.15" class="w-full p-2.5 border rounded-lg text-sm bg-indigo-50">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Qty *</label>
-              <input type="number" id="inpProdQty" required value="4" min="1" class="w-full p-2.5 border rounded-lg text-sm">
-            </div>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Custom SKU (Optional)</label>
-              <input type="text" id="inpProdSku" placeholder="Leave blank to auto-generate" class="w-full p-2.5 border rounded-lg text-sm">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Lot Ref / Bill No</label>
-              <input type="text" id="inpProdLot" placeholder="LOT-01" class="w-full p-2.5 border rounded-lg text-sm">
-            </div>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Product Photo URL (Google Drive Link)</label>
-            <input type="url" id="inpProdImage" placeholder="https://drive.google.com/..." class="w-full p-2.5 border rounded-lg text-sm">
-          </div>
-        `;
-      } else if (type === 'newtrip') {
-        actionHidden.value = "createTrip";
-        container.innerHTML = `
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Expense ID *</label>
-              <input type="text" id="inpTripExpId" placeholder="e.g. EXP-3" required class="w-full p-2.5 border rounded-lg text-sm font-mono font-bold">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Trip Date *</label>
-              <input type="date" id="inpTripDate" required class="w-full p-2.5 border rounded-lg text-sm">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Trip / Market Name *</label>
-              <input type="text" id="inpTripName" placeholder="Surat Wholesale Oct Trip" required class="w-full p-2.5 border rounded-lg text-sm">
-            </div>
-          </div>
-        `;
-      } else if (type === 'subexpense') {
-        actionHidden.value = "addExpenseDetail";
-        container.innerHTML = `
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Parent Trip *</label>
-              <select id="inpSubExpId" class="w-full p-2.5 border rounded-lg text-sm font-medium bg-indigo-50">
-                ${getTripOptionsHtml()}
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Sub-Category *</label>
-              <select id="inpSubCat" class="w-full p-2.5 border rounded-lg text-sm">
-                <option value="Transport / Tempo">Transport / Tempo Cartage</option>
-                <option value="Hotel / Stay">Hotel Stay</option>
-                <option value="Lunch / Food">Lunch / Meals</option>
-                <option value="Packaging Polybags">Packaging Polybags & Tags</option>
-                <option value="Travel Fares">Train / Auto / Bus Fares</option>
-                <option value="Other Misc">Other Miscellaneous</option>
-              </select>
-            </div>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Amount (₹) *</label>
-              <input type="number" id="inpSubAmount" required placeholder="2500" class="w-full p-2.5 border rounded-lg text-sm">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Payment Mode</label>
-              <select id="inpSubMode" class="w-full p-2.5 border rounded-lg text-sm">
-                <option value="Cash">Cash</option>
-                <option value="UPI">UPI / GPay</option>
-                <option value="Bank">Bank Transfer</option>
-              </select>
-            </div>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Item Description</label>
-            <input type="text" id="inpSubDesc" placeholder="e.g. Tempo cartage to shop" class="w-full p-2.5 border rounded-lg text-sm">
-          </div>
-        `;
-      } else if (type === 'purchase') {
-        actionHidden.value = "addPurchase";
-        container.innerHTML = `
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Link to Trip *</label>
-              <select id="inpPurchExpId" class="w-full p-2.5 border rounded-lg text-sm font-medium bg-indigo-50">
-                ${getTripOptionsHtml()}
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Wholesaler / Supplier Name *</label>
-              <input type="text" id="inpPurchSupplier" required placeholder="e.g. Shree Textiles" class="w-full p-2.5 border rounded-lg text-sm">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Market City *</label>
-              <input type="text" id="inpPurchCity" value="Surat Market" required class="w-full p-2.5 border rounded-lg text-sm">
-            </div>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Bill Amount (₹) *</label>
-              <input type="number" id="inpPurchAmount" required placeholder="30500" class="w-full p-2.5 border rounded-lg text-sm">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Total Pieces *</label>
-              <input type="number" id="inpPurchPieces" required placeholder="60" class="w-full p-2.5 border rounded-lg text-sm">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Tax Type</label>
-              <select id="inpPurchTax" class="w-full p-2.5 border rounded-lg text-sm">
-                <option value="GST (5%)">GST (5%)</option>
-                <option value="Non-GST / Cash">Non-GST / Cash</option>
-              </select>
-            </div>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Bill / Lot Reference</label>
-              <input type="text" id="inpPurchLotNo" placeholder="LOT-03" class="w-full p-2.5 border rounded-lg text-sm">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Payment Status</label>
-              <select id="inpPurchStatus" class="w-full p-2.5 border rounded-lg text-sm">
-                <option value="Paid">Paid</option>
-                <option value="Pending">Pending</option>
-              </select>
-            </div>
-          </div>
-        `;
-      } else if (type === 'sale') {
-        actionHidden.value = "recordSale";
-        container.innerHTML = `
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Product SKU *</label>
-              <input type="text" id="inpSku" required oninput="onSkuEntered()" placeholder="e.g. A1, A2, DRS-..." 
-                     class="w-full p-2.5 border rounded-lg text-sm font-mono uppercase bg-indigo-50/50 focus:bg-white transition">
-              <span id="skuHint" class="text-[11px] text-slate-400 mt-1 block">Type SKU to auto-populate MRP</span>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Quantity Sold *</label>
-              <input type="number" id="inpQty" min="1" required value="1" oninput="calculateSaleTotals()" class="w-full p-2.5 border rounded-lg text-sm">
-            </div>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Sales Channel</label>
-              <select id="inpChannel" class="w-full p-2.5 border rounded-lg text-sm">
-                <option value="Reseller Sale">Reseller Sale</option>
-                <option value="Direct Retail Walk-in">Direct Retail Walk-in</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Customer / Reseller Name *</label>
-              <input type="text" id="inpParty" placeholder="e.g. Aqib, Tausif, Walk-in" required class="w-full p-2.5 border rounded-lg text-sm">
-            </div>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Tag MRP / Unit (₹) *</label>
-              <input type="number" id="inpMrp" placeholder="Auto-fills from SKU" required oninput="calculateSaleTotals()" class="w-full p-2.5 border rounded-lg text-sm font-semibold text-slate-800">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Discount Type</label>
-              <select id="inpDiscountType" class="w-full p-2.5 border rounded-lg text-sm">
-                <option value="None">None</option>
-                <option value="Bundle Offer">Bundle Offer</option>
-                <option value="Flat Discount">Flat Discount</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Total Discount (₹)</label>
-              <input type="number" id="inpDiscountAmount" value="0" min="0" oninput="calculateSaleTotals()" class="w-full p-2.5 border rounded-lg text-sm">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Net Payable (₹) *</label>
-              <input type="number" id="inpNetPayable" readonly required class="w-full p-2.5 border rounded-lg text-sm font-bold bg-slate-100 text-[#1B365D]">
-            </div>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Payment Mode</label>
-              <select id="inpPayMode" class="w-full p-2.5 border rounded-lg text-sm">
-                <option value="UPI / GPay">UPI / GPay</option>
-                <option value="Cash">Cash</option>
-                <option value="Bank Transfer">Bank Transfer</option>
-                <option value="Udhaar / Credit">Udhaar / Credit</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Payment Status</label>
-              <select id="inpPayStatus" class="w-full p-2.5 border rounded-lg text-sm font-semibold text-emerald-800 bg-emerald-50/50">
-                <option value="Received">Received</option>
-                <option value="Pending">Pending</option>
-              </select>
-            </div>
-          </div>
-        `;
-      } else if (type === 'consignment') {
-        actionHidden.value = "issueConsignment";
-        container.innerHTML = `
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Product SKU *</label>
-              <input type="text" id="inpSku" required placeholder="e.g. A1, DRS-GEO-101-BLU-FS" class="w-full p-2.5 border rounded-lg text-sm">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Quantity Issued *</label>
-              <input type="number" id="inpQty" min="1" required value="2" class="w-full p-2.5 border rounded-lg text-sm">
-            </div>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Reseller Name *</label>
-              <input type="text" id="inpParty" placeholder="e.g. Partner A" required class="w-full p-2.5 border rounded-lg text-sm">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Reseller Base Rate / pc (₹) *</label>
-              <input type="number" id="inpBaseRate" placeholder="e.g. 1150" required class="w-full p-2.5 border rounded-lg text-sm">
-            </div>
-          </div>
-        `;
-      } else if (type === 'return') {
-        actionHidden.value = "recordReturn";
-        container.innerHTML = `
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Product SKU *</label>
-              <input type="text" id="inpSku" required placeholder="e.g. A1, DRS-GEO-101-BLU-FS" class="w-full p-2.5 border rounded-lg text-sm">
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Return Quantity *</label>
-              <input type="number" id="inpQty" min="1" required value="1" class="w-full p-2.5 border rounded-lg text-sm">
-            </div>
-          </div>
-          <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Return Direction *</label>
-              <select id="inpDirection" class="w-full p-2.5 border rounded-lg text-sm">
-                <option value="Reseller Return to Shop">Reseller Return to Shop</option>
-                <option value="Customer Return to Shop">Customer Return to Shop</option>
-                <option value="Defective Sent to Wholesaler">Defective Sent to Wholesaler</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-xs font-semibold text-slate-600 mb-1">Party / Wholesaler Name *</label>
-              <input type="text" id="inpParty" placeholder="Name" required class="w-full p-2.5 border rounded-lg text-sm">
-            </div>
-          </div>
-          <div>
-            <label class="block text-xs font-semibold text-slate-600 mb-1">Reason for Return *</label>
-            <input type="text" id="inpReason" placeholder="Defective stitching, color exchange, etc." required class="w-full p-2.5 border rounded-lg text-sm">
-          </div>
-        `;
-      }
-    }
-
-    // 7. Form Submit Handler
-    async function handleFormSubmit(e) {
+    async function submitSale(e) {
       e.preventDefault();
-      const statusBox = document.getElementById("formStatusContainer");
-      const btn = document.getElementById("btnSubmitForm");
-      const actionType = document.getElementById("formActionType").value;
+      const sku = document.getElementById("modalSku").value;
+      const price = document.getElementById("modalPrice").value;
+      const reseller = document.getElementById("modalReseller").value;
+      const btn = document.getElementById("btnConfirmSale");
 
       btn.disabled = true;
-      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-2"></i>Submitting to Sheet...`;
-      statusBox.classList.add("hidden");
-
-      let payload = {
-        action: actionType,
-        notes: document.getElementById("inpNotes")?.value || ""
-      };
-
-      if (actionType === "addProduct") {
-        payload.expenseId = document.getElementById("inpProdExpId").value;
-        payload.name = document.getElementById("inpProdName").value;
-        payload.fabric = document.getElementById("inpProdFabric").value;
-        payload.designNo = document.getElementById("inpProdDesign").value;
-        payload.color = document.getElementById("inpProdColor").value;
-        payload.size = document.getElementById("inpProdSize").value;
-        payload.wholesaleCost = document.getElementById("inpProdCost").value;
-        payload.retailMargin = document.getElementById("inpProdRetailMargin").value;
-        payload.resellerMargin = document.getElementById("inpProdResellerMargin").value;
-        payload.purchasedQty = document.getElementById("inpProdQty").value;
-        payload.sku = document.getElementById("inpProdSku").value;
-        payload.lotRef = document.getElementById("inpProdLot").value;
-        payload.imageUrl = document.getElementById("inpProdImage").value;
-      } else if (actionType === "createTrip") {
-        payload.expenseId = document.getElementById("inpTripExpId").value;
-        payload.date = document.getElementById("inpTripDate").value;
-        payload.tripName = document.getElementById("inpTripName").value;
-      } else if (actionType === "addExpenseDetail") {
-        payload.expenseId = document.getElementById("inpSubExpId").value;
-        payload.subCategory = document.getElementById("inpSubCat").value;
-        payload.amount = document.getElementById("inpSubAmount").value;
-        payload.paymentMode = document.getElementById("inpSubMode").value;
-        payload.description = document.getElementById("inpSubDesc").value;
-      } else if (actionType === "addPurchase") {
-        payload.expenseId = document.getElementById("inpPurchExpId").value;
-        payload.supplierName = document.getElementById("inpPurchSupplier").value;
-        payload.city = document.getElementById("inpPurchCity").value;
-        payload.billAmount = document.getElementById("inpPurchAmount").value;
-        payload.totalPieces = document.getElementById("inpPurchPieces").value;
-        payload.taxType = document.getElementById("inpPurchTax").value;
-        payload.lotNo = document.getElementById("inpPurchLotNo").value;
-        payload.paymentStatus = document.getElementById("inpPurchStatus").value;
-      } else if (actionType === "recordSale") {
-        payload.sku = (document.getElementById("inpSku")?.value || "").trim().toUpperCase();
-        payload.channel = document.getElementById("inpChannel").value;
-        payload.customerOrReseller = document.getElementById("inpParty").value;
-        payload.qtySold = document.getElementById("inpQty").value;
-        payload.tagMrp = document.getElementById("inpMrp").value;
-        payload.discountType = document.getElementById("inpDiscountType").value;
-        payload.discountAmount = document.getElementById("inpDiscountAmount").value;
-        payload.netPayable = document.getElementById("inpNetPayable").value;
-        payload.paymentMode = document.getElementById("inpPayMode").value;
-        payload.paymentStatus = document.getElementById("inpPayStatus").value;
-      } else if (actionType === "issueConsignment") {
-        payload.sku = (document.getElementById("inpSku")?.value || "").trim().toUpperCase();
-        payload.resellerName = document.getElementById("inpParty").value;
-        payload.qtyIssued = document.getElementById("inpQty").value;
-        payload.resellerBaseRate = document.getElementById("inpBaseRate").value;
-      } else if (actionType === "recordReturn") {
-        payload.sku = (document.getElementById("inpSku")?.value || "").trim().toUpperCase();
-        payload.returnDirection = document.getElementById("inpDirection").value;
-        payload.partyName = document.getElementById("inpParty").value;
-        payload.returnQty = document.getElementById("inpQty").value;
-        payload.reason = document.getElementById("inpReason").value;
-      }
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin mr-1"></i> Saving...`;
 
       try {
         const response = await fetch(API_URL, {
           method: "POST",
           headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({
+            sku: sku,
+            soldPrice: price,
+            resellerName: reseller
+          })
         });
-        const result = await response.json();
 
-        statusBox.classList.remove("hidden");
-        if (result.status === "success") {
-          statusBox.className = "mt-3 p-3 rounded-lg text-xs font-semibold text-center bg-emerald-50 text-emerald-700 border border-emerald-200";
-          statusBox.innerHTML = `<i class="fa-solid fa-circle-check mr-1.5"></i> ${result.message}`;
-          document.getElementById("actionForm").reset();
-
-          // Reset client caches so subsequent visits fetch freshly updated rows
-          store.inventory = null;
-          store.batches = null;
-          store.batchCache = {};
-          store.resellers = null;
-          store.detailedConsignments = null;
-          store.accounts = null;
-          store.purchasers = null;
-          store.trips = null;
+        const res = await response.json();
+        if (res.status === "success") {
+          portalData.bills.forEach(b => {
+            const found = b.items.find(i => i.sku === sku);
+            if (found) found.stock = Math.max(0, found.stock - 1);
+          });
+          onBillSelected();
+          closeSaleModal();
         } else {
-          statusBox.className = "mt-3 p-3 rounded-lg text-xs font-semibold text-center bg-rose-50 text-rose-700 border border-rose-200";
-          statusBox.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1.5"></i> [Error at ${result.step || 'Form'}]: ${result.message}`;
+          alert(`Error: ${res.message}`);
         }
       } catch (err) {
-        statusBox.classList.remove("hidden");
-        statusBox.className = "mt-3 p-3 rounded-lg text-xs font-semibold text-center bg-rose-50 text-rose-700 border border-rose-200";
-        statusBox.innerHTML = `<i class="fa-solid fa-circle-xmark mr-1.5"></i> Submission failed: ${err.message}`;
+        alert(`Network Error: ${err.message}`);
       } finally {
         btn.disabled = false;
-        btn.innerHTML = "Submit Record";
+        btn.innerText = "Confirm Sale";
       }
     }
 
-    // App Initialization
     window.onload = () => {
-      loadBatches();
+      fetchPortalData();
     };
   </script>
 </body>
