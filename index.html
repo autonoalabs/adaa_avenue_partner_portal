@@ -53,6 +53,7 @@
           <thead class="bg-slate-100 text-slate-700 text-xs uppercase font-semibold">
             <tr>
               <th class="p-3">Product Code</th>
+              <th class="p-3 text-right">Purchase Cost</th>
               <th class="p-3 text-right">Selling MRP</th>
               <th class="p-3 text-center">Available Stock</th>
               <th class="p-3 text-center">Action</th>
@@ -165,50 +166,73 @@
     }
 
     function onBillSelected() {
-      const selectedRef = document.getElementById("billSelector").value;
-      const bill = portalData.bills.find(b => b.billRef === selectedRef);
+      const selectedRef = document.getElementById("billSelector")?.value;
       const tbody = document.getElementById("itemsTableBody");
       const header = document.getElementById("activeBillHeader");
       const subtext = document.getElementById("activeBillSubtext");
       const badge = document.getElementById("itemsCountBadge");
 
-      if (!bill) {
-        tbody.innerHTML = `<tr><td colspan="4" class="text-center p-6 text-slate-400">Please select a bill.</td></tr>`;
+      if (!tbody) return;
+
+      if (!portalData || !portalData.bills || portalData.bills.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center p-6 text-slate-400">No bills loaded.</td></tr>`;
         return;
       }
 
-      header.innerText = bill.label;
-      // Changed "Lot Reference" to "Bill Number"
-      subtext.innerText = `Bill Number: ${bill.billRef}`;
-      badge.classList.remove("hidden");
-      badge.innerText = `${bill.items.length} items`;
+      // Safe lookup
+      const bill = portalData.bills.find(b => String(b.billRef).trim() === String(selectedRef).trim());
+
+      if (!bill) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center p-6 text-slate-400">Please select a valid bill from the dropdown.</td></tr>`;
+        if (badge) badge.classList.add("hidden");
+        return;
+      }
+
+      if (header) header.innerText = bill.label || "Selected Bill";
+      if (subtext) subtext.innerText = `Bill Number: ${bill.billRef || 'N/A'}`;
+      
+      const itemsList = Array.isArray(bill.items) ? bill.items : [];
+
+      if (badge) {
+        badge.classList.remove("hidden");
+        badge.innerText = `${itemsList.length} items`;
+      }
 
       tbody.innerHTML = "";
-      if (bill.items.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="4" class="text-center p-6 text-slate-400">No items registered under this bill.</td></tr>`;
+
+      if (itemsList.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="text-center p-6 text-slate-400">No products registered under this bill.</td></tr>`;
         return;
       }
 
-      bill.items.forEach(item => {
-        const isOutOfStock = item.stock <= 0;
-        
-        // Build sub-details line (Description • Color • Size)
+      // Safe iteration
+      itemsList.forEach(item => {
+        if (!item) return;
+
+        const sku = item.sku || "UNKNOWN";
+        const stock = Number(item.stock) || 0;
+        const mrp = Number(item.mrp) || 0;
+        const purchaseCost = Number(item.purchasePrice) || 0;
+        const isOutOfStock = stock <= 0;
+
+        // Build details line (Description • Color • Size)
         const details = [item.description, item.color, item.size].filter(Boolean).join(" • ");
 
         tbody.innerHTML += `
           <tr class="hover:bg-slate-50 transition">
             <td class="p-3">
-              <span class="font-mono font-bold text-slate-900 text-sm block">${item.sku}</span>
+              <span class="font-mono font-bold text-slate-900 text-sm block">${sku}</span>
               ${details ? `<span class="text-xs text-slate-500 block mt-0.5">${details}</span>` : ''}
             </td>
-            <td class="p-3 text-right font-extrabold text-slate-900">₹${Number(item.mrp || 0).toLocaleString()}</td>
+            <td class="p-3 text-right font-semibold text-slate-600">₹${purchaseCost.toLocaleString()}</td>
+            <td class="p-3 text-right font-extrabold text-[#1B365D]">₹${mrp.toLocaleString()}</td>
             <td class="p-3 text-center">
-              <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${item.stock > 3 ? 'bg-emerald-100 text-emerald-800' : (item.stock > 0 ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800')}">
-                ${item.stock} pcs
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ${stock > 3 ? 'bg-emerald-100 text-emerald-800' : (stock > 0 ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800')}">
+                ${stock} pcs
               </span>
             </td>
             <td class="p-3 text-center">
-              <button onclick="openSaleModal('${item.sku}', ${item.mrp})" 
+              <button onclick="openSaleModal('${sku}', ${mrp})" 
                       ${isOutOfStock ? 'disabled' : ''} 
                       class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 mx-auto shadow-sm ${isOutOfStock ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-[#1B365D] hover:bg-slate-800 text-white'}">
                 <i class="fa-solid fa-plus text-[10px]"></i> Add Sale
